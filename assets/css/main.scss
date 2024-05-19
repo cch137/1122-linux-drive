@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  h1 {
+    @apply text-4xl;
+    @apply mt-8;
+    @apply mb-2;
+  }
+  h2 {
+    @apply text-3xl;
+    @apply mt-6;
+    margin-bottom: 6px;
+  }
+  h3 {
+    @apply text-2xl;
+    @apply mt-4;
+    @apply mb-1;
+  }
+  h4 {
+    @apply text-xl;
+    @apply mt-2;
+    margin-bottom: 2px;
+  }
+  h5 {
+    @apply text-lg;
+    @apply mt-1;
+    @apply mb-px;
+  }
+}

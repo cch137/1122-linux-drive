@@ -1,0 +1,1 @@
+import{u as a}from"./C_VhRGin.js";import{u as e,E as s}from"./qCq1Xd3Y.js";import{f as n,M as r}from"./BvF4o2qK.js";import{a as i}from"./25TpYJ86.js";import"./BqKQn9T9.js";const d=n({__name:"logout",setup(u){const{logout:t}=a();e(`Log Out - ${i}`);const o=s.service({text:"Logging out..."});return t().finally(()=>{o&&o.close(),r("/")}),(m,p)=>null}});export{d as default};
