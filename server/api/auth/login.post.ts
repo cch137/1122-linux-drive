@@ -1,29 +1,33 @@
-import { PIN, SALT } from '~/constants/app'
-import { parse as parseCookie, serialize as serializeCookie } from 'cookie'
-import RateLimiter from '~/server/utils/rate-limiter'
-import getIp from '~/server/utils/get-ip'
-import troll from '~/utils/troll'
+import { PIN, SALT } from "~/constants/app";
+import { serialize as serializeCookie } from "cookie";
+import RateLimiter from "@cch137/utils/rate-limiter";
+import getRequestIp from "@cch137/utils/server/get-request-ip";
+import Shuttle from "@cch137/utils/shuttle";
 
-// Every 5 minutes 5 times
-const rateLimiter = new RateLimiter(5, 5 * 60 * 1000)
+const rateLimiter = new RateLimiter([{ maxCount: 5, timeMs: 1 * 60 * 60 }]);
 
-export default defineEventHandler(async function (event): Promise<{ error?: string, isLoggedIn: boolean }> {
-  const { req, res } = event.node
-  if (!rateLimiter.check(getIp(req))) {
-    return { isLoggedIn: false, error: rateLimiter.hint }
-  }
-  const pin = (await readBody(event) as { pin?: string })?.pin;
-  // @ts-ignore
-  if (pin !== PIN) {
-    return { isLoggedIn: false, error: 'Incorrect pin.' }
-  }
+export default defineEventHandler(async function (
+  event
+): Promise<{ error?: string; isLoggedIn: boolean }> {
+  const { req, res } = event.node;
+  const checked = rateLimiter.check(getRequestIp(req));
+  if (!checked.success) return { isLoggedIn: false, error: checked.message };
+  const pin = ((await readBody(event)) as { pin?: string })?.pin;
+  if (pin !== PIN) return { isLoggedIn: false, error: "Incorrect pin." };
 
-  res.setHeader('Set-Cookie', serializeCookie('token', troll.e(pin, 2 , SALT), {
-    path: '/',
-    httpOnly: true,
-    sameSite: true,
-    secure: true,
-  }));
+  res.setHeader(
+    "Set-Cookie",
+    serializeCookie(
+      "token",
+      Shuttle.packWithHash(pin, "MD5", SALT).toBase64(),
+      {
+        path: "/",
+        httpOnly: true,
+        sameSite: true,
+        secure: true,
+      }
+    )
+  );
 
   return { isLoggedIn: true };
-})
+});
