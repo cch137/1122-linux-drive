@@ -19,7 +19,7 @@ export default defineEventHandler(async function (
     "Set-Cookie",
     serializeCookie(
       "token",
-      Shuttle.packWithHash(pin, "MD5", SALT).toBase64(),
+      Shuttle.packWithHash(pin, "MD5", SALT).toBase64URL(),
       {
         path: "/",
         httpOnly: true,
