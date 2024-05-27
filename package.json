@@ -15,7 +15,7 @@
     "node": ">=17"
   },
   "dependencies": {
-    "@cch137/utils": "^0.3.5",
+    "@cch137/utils": "^0.3.6",
     "@element-plus/icons-vue": "^2.3.1",
     "@element-plus/nuxt": "^1.0.9",
     "@nuxt/devtools": "latest",
