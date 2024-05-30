@@ -21,6 +21,6 @@ export default defineEventHandler(async (event) => {
 
     return { isUnique };
   } catch (error) {
-    sendError(event, error);
+    //sendError(event, error);
   }
 });
