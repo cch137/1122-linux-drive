@@ -7,6 +7,7 @@
         <el-button :icon="Refresh" @click="loading(drive.refresh)" :loading="isLoading">Refresh</el-button>
         <el-button @click="setView('grid')" :disabled="viewType === 'grid'">Grid View</el-button>
         <el-button @click="setView('list')" :disabled="viewType === 'list'">List View</el-button>
+        <el-button @click="shareRoom" :icon="Share">Share Room</el-button>
         <form style="display: none;">
           <input class="FileUpload" type="file" multiple @change="loading(() => drive.uploadFiles(fileInputEl().files))" />
         </form>
@@ -66,90 +67,131 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, watch } from 'vue';
-import { ElLoading } from 'element-plus';
-import { Upload, Refresh, Delete } from '@element-plus/icons-vue';
+<script>
+import { ref, watch, onMounted } from 'vue';
+import { ElLoading, ElMessage } from 'element-plus';
+import { Upload, Refresh, Delete, Share } from '@element-plus/icons-vue';
 import { appName } from '~/constants/app';
 import useAuth from '~/composables/useAuth';
 import useDrive from '~/composables/useDrive';
 import FileViewer from '~/components/fileviewer.vue';
 
-const { isLoggedIn } = useAuth();
-const drive = useDrive();
-const { isLoading, fileList } = drive;
+export default {
+  components: {
+    FileViewer
+  },
+  setup() {
+    const { isLoggedIn } = useAuth();
+    const drive = useDrive();
+    const { isLoading, fileList } = drive;
 
-const viewType = ref('grid');
-const viewerVisible = ref(false);
-const currentFile = ref('');
+    const viewType = ref('grid');
+    const viewerVisible = ref(false);
+    const currentFile = ref('');
+    const currentRoom = ref('');
 
-const setView = (type: string) => {
-  viewType.value = type;
-};
+    const setView = (type) => {
+      viewType.value = type;
+    };
 
-const openViewer = (file: string) => {
-  currentFile.value = file;
-  viewerVisible.value = true;
-};
+    const openViewer = (file) => {
+      currentFile.value = file;
+      viewerVisible.value = true;
+    };
 
-async function loading(func: Function, text = 'Loading...') {
-  const loading = ElLoading.service({ text });
-  try {
-    return await func();
-  } finally {
-    loading.close();
+    const loading = async (func, text = 'Loading...') => {
+      const loading = ElLoading.service({ text });
+      try {
+        return await func();
+      } finally {
+        loading.close();
+      }
+    };
+
+    const fileInputEl = () => {
+      return document.querySelector('.FileUpload');
+    };
+
+    const isImage = (fileName) => {
+      return /\.(jpg|jpeg|png|gif|bmp)$/i.test(fileName);
+    };
+
+    const getFileIcon = (fileName) => {
+      const extension = getFileExtension(fileName).toLowerCase();
+      if (isImage(fileName)) {
+        return `/api/drive/file/${fileName}`;
+      }
+      switch (extension) {
+        case 'pdf':
+          return '/pdf.png';
+        case 'doc':
+        case 'docx':
+          return '/doc.png';
+        case 'ppt':
+        case 'pptx':
+          return '/ppt.png';
+        case 'xls':
+        case 'xlsx':
+          return '/excel.png';
+        case 'zip':
+        case 'rar':
+          return '/zip.png';
+        default:
+          return '/other.png';
+      }
+    };
+
+    const getFileExtension = (fileName) => {
+      return fileName.split('.').pop() || '';
+    };
+
+    const shareRoom = () => {
+      const roomNumber = currentRoom.value; // 获取当前房间号
+      const shareUrl = `${window.location.origin}/login?room=${roomNumber}`;
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        ElMessage.success('Share link copied to clipboard');
+      }).catch(() => {
+        ElMessage.error('Failed to copy share link');
+      });
+    };
+
+    onMounted(() => {
+      // 从 sessionStorage 中获取房间号
+      const room = sessionStorage.getItem('currentRoom');
+      if (room) {
+        currentRoom.value = room;
+      }
+    });
+
+    watch(isLoggedIn, (value) => (value ? loading(drive.refresh) : (drive.fileList.value = [])));
+
+    if (process.client) {
+      if (isLoggedIn.value) {
+        loading(drive.refresh);
+      }
+    }
+
+    useTitle(`${appName}`);
+    definePageMeta({
+      layout: 'default'
+    });
+
+    return {
+      isLoggedIn,
+      isLoading,
+      fileList,
+      viewType,
+      viewerVisible,
+      currentFile,
+      setView,
+      openViewer,
+      loading,
+      fileInputEl,
+      getFileIcon,
+      shareRoom
+    };
   }
-}
-
-function fileInputEl() {
-  return document.querySelector('.FileUpload') as HTMLInputElement;
-}
-
-const isImage = (fileName: string) => {
-  return /\.(jpg|jpeg|png|gif|bmp)$/i.test(fileName);
 };
-
-const getFileIcon = (fileName: string) => {
-  const extension = getFileExtension(fileName).toLowerCase();
-  if (isImage(fileName)) {
-    return `/api/drive/file/${fileName}`;
-  }
-  switch (extension) {
-    case 'pdf':
-      return '/pdf.png';
-    case 'doc':
-    case 'docx':
-      return '/doc.png';
-    case 'ppt':
-    case 'pptx':
-      return '/ppt.png';
-    case 'xls':
-    case 'xlsx':
-      return '/excel.png';
-    case 'zip':
-    case 'rar':
-      return '/zip.png';
-    default:
-      return '/other.png';
-  }
-};
-
-const getFileExtension = (fileName: string) => {
-  return fileName.split('.').pop() || '';
-};
-
-watch(isLoggedIn, (value) => value ? loading(drive.refresh) : drive.fileList.value = []);
-
-if (process.client) {
-  if (isLoggedIn.value) {
-    loading(drive.refresh);
-  }
-}
-
-useTitle(`${appName}`);
-definePageMeta({
-  layout: 'default'
-});
 </script>
 
 <style scoped>
