@@ -12,9 +12,14 @@ export default defineEventHandler(async function (
       parseCookie(req.headers.cookie || "")?.token || "",
       "MD5",
       SALT
-    );
-    if (pin == PIN) return { isLoggedIn: true };
-  } catch {}
+    ) as string;
+    if (PIN.includes(pin)) {
+      console.log("Logged in with PIN: ", pin);
+      return { isLoggedIn: true };
+    }
+  } catch {
+    console.error("Invalid token.",PIN);
+  }
 
   res.setHeader(
     "Set-Cookie",

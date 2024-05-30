@@ -11,8 +11,8 @@ export default defineEventHandler(async function (event): Promise<any> {
       parseCookie(req.headers.cookie || "")?.token || "",
       "MD5",
       SALT
-    );
-    if (pin != PIN) {
+    )as string;
+    if (!pin || !PIN.includes(pin)) {
       res.statusCode = 401;
       return "";
     }

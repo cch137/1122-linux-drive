@@ -13,8 +13,8 @@ export default defineEventHandler(async function (
       parseCookie(req.headers.cookie || "")?.token || "",
       "MD5",
       SALT
-    );
-    if (pin != PIN) return { error: "Not logged in", data: [] };
+    )as string;
+    if (!pin || !PIN.includes(pin)) return { error: "Not logged in", data: [] };
   } catch {
     return { error: "Not logged in", data: [] };
   }
