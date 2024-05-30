@@ -146,7 +146,7 @@ export default {
     };
 
     const shareRoom = () => {
-      const roomNumber = currentRoom.value; // 获取当前房间号
+      const roomNumber = currentRoom.value; 
       const shareUrl = `${window.location.origin}/login?room=${roomNumber}`;
       navigator.clipboard.writeText(shareUrl).then(() => {
         ElMessage.success('Share link copied to clipboard');
@@ -156,7 +156,6 @@ export default {
     };
 
     onMounted(() => {
-      // 从 sessionStorage 中获取房间号
       const room = sessionStorage.getItem('currentRoom');
       if (room) {
         currentRoom.value = room;
