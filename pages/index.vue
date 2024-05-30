@@ -19,7 +19,7 @@
         <div v-if="viewType === 'grid'" class="FileGrid">
           <div v-for="fp in fileList" :key="fp" class="FileItem">
             <a :href="`/api/drive/file/${fp}`" target="_blank">
-            <div class="ImageContainer">
+            <div class="ImageContainer" @click="openViewer(`/api/drive/file/${fp}`)">
               <img
                 :src="`/api/drive/file/${fp}`"
                 alt="Uploaded file"
