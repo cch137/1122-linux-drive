@@ -46,5 +46,15 @@ export default defineNuxtConfig({
       tailwindcss: {},
       autoprefixer: {}
     }
-  }
+  },
+  nitro: {
+    plugins: []
+  },
+  serverHandlers: [
+    {
+      route: '/api/add-pin',
+      handler: '~/server/middleware/add-pin.ts',
+      method: 'post'
+    }
+  ]
 })

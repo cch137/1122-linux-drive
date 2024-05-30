@@ -4,31 +4,57 @@
       <div>
         <el-button :icon="Upload" @click="fileInputEl().click()" :loading="isLoading">Upload</el-button>
         <el-button :icon="Refresh" @click="loading(drive.refresh)" :loading="isLoading">Refresh</el-button>
+        <el-button @click="setView('grid')" :disabled="viewType === 'grid'">Grid View</el-button>
+        <el-button @click="setView('list')" :disabled="viewType === 'list'">List View</el-button>
         <form style="display: none;">
           <input class="FileUpload" type="file" multiple @change="loading(() => drive.uploadFiles(fileInputEl().files))" />
         </form>
       </div>
-      <div class="FileList mt-8">
+      <div class="FileList mt-8 m-8">
         <div v-if="fileList.length === 0">
           <div class="text-center select-none">
             <el-text type="info">No files</el-text>
           </div>
         </div>
-        <div v-for="fp in fileList" class="FileItem flex justify-center items-center">
-          <a
-            class="flex-1"
-            :href="`/api/drive/file/${fp}`"
-            target="_blank"
-          >
-            <el-text size="large">{{ fp }}</el-text>
+        <div v-if="viewType === 'grid'" class="FileGrid">
+          <div v-for="fp in fileList" :key="fp" class="FileItem">
+            <a :href="`/api/drive/file/${fp}`" target="_blank">
+            <div class="ImageContainer" @click="openViewer(`/api/drive/file/${fp}`)">
+              <img
+                :src="`/api/drive/file/${fp}`"
+                alt="Uploaded file"
+                class="UploadedFile"
+              />
+            </div>
           </a>
-          <el-button
-            class="FileItemDeleteBtn mx-1"
-            :icon="Delete" type="danger"
-            plain
-            :loading="isLoading"
-            @click="loading(() => drive.deleteFile(fp))"
-          />
+              <el-button
+                class="FileItemDeleteBtn"
+                :icon="Delete"
+                type="danger"
+                plain
+                :loading="isLoading"
+                @click="loading(() => drive.deleteFile(fp))"
+              />
+            </div>
+          </div>
+
+        <div v-else class="FileListItems">
+          <div v-for="fp in fileList" :key="fp" class="FileItem flex justify-center items-center">
+            <a
+              class="flex-1"
+              :href="`/api/drive/file/${fp}`"
+              target="_blank"
+            >
+              <el-text size="large">{{ fp }}</el-text>
+            </a>
+            <el-button
+              class="FileItemDeleteBtn mx-1"
+              :icon="Delete" type="danger"
+              plain
+              :loading="isLoading"
+              @click="loading(() => drive.deleteFile(fp))"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -46,14 +72,22 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue';
 import { ElLoading } from 'element-plus';
-import { Upload, Refresh, Delete } from '@element-plus/icons-vue'
+import { Upload, Refresh, Delete } from '@element-plus/icons-vue';
 import { appName } from '~/constants/app';
+import useAuth from '~/composables/useAuth';
+import useDrive from '~/composables/useDrive';
 
 const { isLoggedIn } = useAuth();
-
 const drive = useDrive();
 const { isLoading, fileList } = drive;
+
+const viewType = ref('grid');
+
+const setView = (type: string) => {
+  viewType.value = type;
+};
 
 async function loading(func: Function, text = 'Loading...') {
   const loading = ElLoading.service({ text });
@@ -76,36 +110,64 @@ if (process.client) {
   }
 }
 
-useTitle(`${appName}`)
+useTitle(`${appName}`);
 definePageMeta({
   layout: 'default'
-})
+});
 </script>
 
-<style>
-.HomepageLoginButton span {
-  transform: scale(1.125);
-}
-
-.FileList {
-  max-width: 90vw;
-  width: 540px;
+<style scoped>
+.FileGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
 }
 
 .FileItem {
-  border-bottom: 1px solid #80808080;
+  position: relative;
 }
 
-.FileItem a {
-  padding: .5rem 1rem;
-  transition: .3s ease-in-out;
+.ImageContainer {
+  position: relative;
+  width: 20vw;
+  padding-top: 100%; 
+  overflow: hidden;
+  border-radius: 15px;
 }
 
-.FileItem a:hover {
-  background: #ffffff10;
+.UploadedFile {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .FileItemDeleteBtn {
-  padding: 8px;
+  position: absolute;
+  bottom: 6px;
+  right: 8px;
+}
+
+.FileListItems {
+  display: flex;
+  flex-direction: column;
+}
+
+.FileListItems .FileItem {
+
+  width: 85vw;
+}
+.FileItem a:hover {
+  background: #ffffff10;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.FileItem a {
+  text-decoration: none;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 </style>

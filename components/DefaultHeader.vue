@@ -12,6 +12,9 @@
         <NuxtLink v-else href="/login">
           <el-link>Log In</el-link>
         </NuxtLink>
+        <NuxtLink href="/addroom">
+          <el-link>Add room </el-link>
+        </NuxtLink>
       </div>
     </div>
   </div>
