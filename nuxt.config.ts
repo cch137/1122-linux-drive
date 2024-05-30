@@ -55,6 +55,11 @@ export default defineNuxtConfig({
       route: '/api/add-pin',
       handler: '~/server/middleware/add-pin.ts',
       method: 'post'
+    },
+    {
+      route: '/api/check-pin',
+      handler: '~/server/middleware/check-pin.ts',
+      method: 'post'
     }
   ]
 })
