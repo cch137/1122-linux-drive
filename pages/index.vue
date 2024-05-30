@@ -1,5 +1,6 @@
 <template>
   <div class="mt-8 flex-col flex-center">
+    <FileViewer :src="currentFile" :show="viewerVisible" @close="viewerVisible = false" />
     <div v-if="isLoggedIn">
       <div>
         <el-button :icon="Upload" @click="fileInputEl().click()" :loading="isLoading">Upload</el-button>
@@ -18,34 +19,28 @@
         </div>
         <div v-if="viewType === 'grid'" class="FileGrid">
           <div v-for="fp in fileList" :key="fp" class="FileItem">
-            <a :href="`/api/drive/file/${fp}`" target="_blank">
-            <div class="ImageContainer" >
+            <div class="ImageContainer" @click="openViewer(`/api/drive/file/${fp}`)">
               <img
-                :src="`/api/drive/file/${fp}`"
+                :src="getFileIcon(fp)"
                 alt="Uploaded file"
                 class="UploadedFile"
               />
             </div>
-          </a>
-              <el-button
-                class="FileItemDeleteBtn"
-                :icon="Delete"
-                type="danger"
-                plain
-                :loading="isLoading"
-                @click="loading(() => drive.deleteFile(fp))"
-              />
-            </div>
+            <el-button
+              class="FileItemDeleteBtn"
+              :icon="Delete"
+              type="danger"
+              plain
+              :loading="isLoading"
+              @click="loading(() => drive.deleteFile(fp))"
+            />
           </div>
-
+        </div>
         <div v-else class="FileListItems">
           <div v-for="fp in fileList" :key="fp" class="FileItem flex justify-center items-center">
-            <a
-              class="flex-1"
-              :href="`/api/drive/file/${fp}`"
-              target="_blank"
-            >
+            <a class="flex-1" @click="openViewer(`/api/drive/file/${fp}`)">
               <el-text size="large">{{ fp }}</el-text>
+              <br>
             </a>
             <el-button
               class="FileItemDeleteBtn mx-1"
@@ -78,15 +73,23 @@ import { Upload, Refresh, Delete } from '@element-plus/icons-vue';
 import { appName } from '~/constants/app';
 import useAuth from '~/composables/useAuth';
 import useDrive from '~/composables/useDrive';
+import FileViewer from '~/components/fileviewer.vue';
 
 const { isLoggedIn } = useAuth();
 const drive = useDrive();
 const { isLoading, fileList } = drive;
 
 const viewType = ref('grid');
+const viewerVisible = ref(false);
+const currentFile = ref('');
 
 const setView = (type: string) => {
   viewType.value = type;
+};
+
+const openViewer = (file: string) => {
+  currentFile.value = file;
+  viewerVisible.value = true;
 };
 
 async function loading(func: Function, text = 'Loading...') {
@@ -101,6 +104,39 @@ async function loading(func: Function, text = 'Loading...') {
 function fileInputEl() {
   return document.querySelector('.FileUpload') as HTMLInputElement;
 }
+
+const isImage = (fileName: string) => {
+  return /\.(jpg|jpeg|png|gif|bmp)$/i.test(fileName);
+};
+
+const getFileIcon = (fileName: string) => {
+  const extension = getFileExtension(fileName).toLowerCase();
+  if (isImage(fileName)) {
+    return `/api/drive/file/${fileName}`;
+  }
+  switch (extension) {
+    case 'pdf':
+      return '/pdf.png';
+    case 'doc':
+    case 'docx':
+      return '/doc.png';
+    case 'ppt':
+    case 'pptx':
+      return '/ppt.png';
+    case 'xls':
+    case 'xlsx':
+      return '/excel.png';
+    case 'zip':
+    case 'rar':
+      return '/zip.png';
+    default:
+      return '/other.png';
+  }
+};
+
+const getFileExtension = (fileName: string) => {
+  return fileName.split('.').pop() || '';
+};
 
 watch(isLoggedIn, (value) => value ? loading(drive.refresh) : drive.fileList.value = []);
 
@@ -125,12 +161,13 @@ definePageMeta({
 
 .FileItem {
   position: relative;
+  cursor: pointer;
 }
 
 .ImageContainer {
   position: relative;
   width: 20vw;
-  padding-top: 100%; 
+  padding-top: 100%;
   overflow: hidden;
   border-radius: 15px;
 }
@@ -148,6 +185,7 @@ definePageMeta({
   position: absolute;
   bottom: 6px;
   right: 8px;
+  border: none;
 }
 
 .FileListItems {
@@ -156,9 +194,9 @@ definePageMeta({
 }
 
 .FileListItems .FileItem {
-
   width: 85vw;
 }
+
 .FileItem a:hover {
   background: #ffffff10;
   padding-top: 10px;
@@ -169,5 +207,7 @@ definePageMeta({
   text-decoration: none;
   padding-top: 10px;
   padding-bottom: 10px;
+  max-width: 70vw;
+  border-bottom: 1px solid #afafaf9c;
 }
 </style>

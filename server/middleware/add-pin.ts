@@ -28,6 +28,6 @@ export default defineEventHandler(async (event) => {
 
     return { success: true };
   } catch (error) {
-    sendError(event, error);
+    //sendError(event, error);
   }
 });
