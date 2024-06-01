@@ -1,73 +1,75 @@
 <template>
-  <div class="LoginWindow border border-slate-800 rounded-2xl p-4">
-    <div class="text-2xl text-center pt-2">Log In</div>
-    <div class="flex flex-col gap-4 my-4">
-      <div>
-        <el-input class="LoginPinInput" v-model="pinInput" placeholder="Pin" @keyup.enter="processEnter(pinInput)" />
-      </div>
-      <div class="flex-center">
-        <el-button type="primary" @click="processEnter(pinInput)">Enter</el-button>
+  <div class="mt-8 flex-col flex-center">
+    <div>
+      <h1>Welcome to Drive!</h1>
+      <div class="mt-16 flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+          <div class="flex gap-2">
+            <div class="flex-1">
+              <el-input ref="roomIdInput" v-model:="roomId" placeholder="Room ID">
+                <template #append>
+                  <el-button class="HomepageLoginButton" @click="copyNewRoomId" :icon="ElIconCopyDocument" circle />
+                </template>
+              </el-input>
+            </div>
+            <div class="w-20 flex">
+              <el-button class="HomepageLoginButton flex-1" type="primary" @click="login">
+                Join
+              </el-button>
+            </div>
+          </div>
+        </div>
+        <el-text type="info" size="large">or</el-text>
+        <div class="flex-center">
+          <div>
+            <el-button class="HomepageLoginButton flex-1" @click="generatePin">
+              Create a new room
+            </el-button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
-import { ElLoading } from 'element-plus';
-import { useRouter } from 'vue-router';
+import { ref } from 'vue';
 import { appName } from '~/constants/app';
-import useAuth from '~/composables/useAuth';
+import copyToClipboard from '@cch137/utils/web/copy-to-clipboard';
 
-const { login, isLoggedIn } = useAuth();
-const router = useRouter();
+const auth = useAuth();
+const roomId = ref('');
+const roomIdInput = ref<HTMLInputElement>();
 
-function focusPinInput() {
+async function login() {
   try {
-    (document.querySelector('.LoginPinInput input') as HTMLInputElement).focus();
-  } catch {}
+    await auth.login(roomId.value);
+    if (auth.isLoggedIn.value) navigateTo('/');
+  } catch (e) {
+    ElMessage.error('Please try again after 5 minutes.')
+  }
 }
 
-function processEnter(pin: string) {
-  pin = pin.trim();
-  if (pin.length == 0) return focusPinInput();
-  const loading = ElLoading.service({ text: 'Logging in...' });
-  login(pin)
-    .then(() => {
-      sessionStorage.setItem('currentRoom', pin);
-    })
-    .finally(() => loading.close());
+async function generatePin() {
+  try {
+    const pin = await $fetch('/api/auth/generate-pin', { method: 'POST' });
+    if (!pin) throw new Error('Room creation error.');
+    ElMessage.success('Room created.');
+    roomId.value = pin;
+    roomIdInput.value?.focus();
+  } catch (e) {
+    ElMessage.error('Please try again after 5 minutes.')
+  }
 }
 
-const pinInput = ref('');
-
-onMounted(() => {
-  setTimeout(() => focusPinInput(), 0);
-  let counter = 0;
-  const setMarginTop = () => {
-    const loginWindowEl = document.querySelector('.LoginWindow') as HTMLDivElement;
-    loginWindowEl.style.setProperty('--h', `${loginWindowEl.clientHeight}px`);
-    counter++;
-    if (++counter > 10) clearInterval(itv);
+async function copyNewRoomId() {
+  try {
+    copyToClipboard(roomId.value);
+    ElMessage.success('Copied room id.');
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : 'Failed to copy.')
   }
-  const itv = setInterval(setMarginTop, 100);
-  setMarginTop();
-
-  // Check URL for room parameter and set pinInput
-  const params = new URLSearchParams(window.location.search);
-  const room = params.get('room');
-  if (room) {
-    pinInput.value = room;
-  }
-});
-
-watch(isLoggedIn, (value) => {
-  if (value) router.push('/');
-});
-
-onMounted(() => {
-  if (isLoggedIn.value) router.push('/');
-});
+}
 
 useTitle(`Log In - ${appName}`);
 definePageMeta({

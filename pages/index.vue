@@ -7,7 +7,7 @@
         <el-button :icon="Refresh" @click="loading(drive.refresh)" :loading="isLoading">Refresh</el-button>
         <el-button @click="viewType = 'grid'" :disabled="viewType === 'grid'">Grid View</el-button>
         <el-button @click="viewType = 'list'" :disabled="viewType === 'list'">List View</el-button>
-        <el-button @click="shareRoom" :icon="Share">Share Room</el-button>
+        <el-button @click="shareRoom" :icon="ElIconShare">Share Room</el-button>
         <form style="display: none;">
           <input class="FileUpload" type="file" multiple @change="loading(() => drive.uploadFiles(fileInputEl().files))" />
         </form>
@@ -29,7 +29,7 @@
             </div>
             <el-button
               class="FileItemDeleteBtn"
-              :icon="Delete"
+              :icon="ElIconDelete"
               type="danger"
               plain
               :loading="isLoading"
@@ -45,7 +45,7 @@
             </a>
             <el-button
               class="FileItemDeleteBtn mx-1"
-              :icon="Delete" type="danger"
+              :icon="ElIconDelete" type="danger"
               plain
               :loading="isLoading"
               @click="loading(() => drive.deleteFile(fp))"
@@ -54,57 +54,15 @@
         </div>
       </div>
     </div>
-    <div v-else>
-      <h1>Welcome to Drive!</h1>
-      <div class="mt-8 flex flex-col gap-4">
-        <div class="flex flex-col gap-1">
-          <div class="text-xl">
-            Join room
-          </div>
-          <div class="flex gap-2">
-            <div class="flex-1">
-              <el-input :value="loginPin" />
-            </div>
-            <div class="w-20 flex">
-              <el-button class="HomepageLoginButton flex-1">
-                Join
-              </el-button>
-            </div>
-          </div>
-        </div>
-        <el-text type="info" size="large">or</el-text>
-        <div class="flex flex-col gap-1">
-          <div class="text-xl">
-            Create room
-          </div>
-          <div class="flex gap-2">
-            <div class="flex-1">
-              <el-input :value="newPin" readonly>
-                <template #append>
-                  <el-button class="HomepageLoginButton" @click="copyNewPin" :icon="ElIconCopyDocument" circle />
-                </template>
-              </el-input>
-            </div>
-            <div class="w-20 flex">
-              <el-button class="HomepageLoginButton flex-1" @click="generatePin">
-                Create
-              </el-button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 import { ElLoading, ElMessage } from 'element-plus';
-import { Upload, Refresh, Delete, Share } from '@element-plus/icons-vue';
 import { appName } from '~/constants/app';
 import useAuth from '~/composables/useAuth';
 import useDrive from '~/composables/useDrive';
-import copyToClipboard from '@cch137/utils/web/copy-to-clipboard'
 import FileViewer from '~/components/fileviewer.vue';
 
 export default {
@@ -112,47 +70,17 @@ export default {
     FileViewer
   },
   setup() {
-    const { isLoggedIn } = useAuth();
+    const { roomId, isLoggedIn } = useAuth();
     const drive = useDrive();
     const { isLoading, fileList } = drive;
 
-const viewType = ref<'grid'|'list'>('grid');
-const newPin = ref('');
-const loginPin = ref('');
+    const viewerVisible = ref(false);
+    const currentFile = ref('');
 
-async function login() {
-  try {
-    const pin = await (
-      await fetch('/api/auth/generate-pin', { method: 'POST' })
-    ).text();
-    if (!pin) throw new Error('Pin generated error.');
-    ElMessage.success('Pin generated successfully.');
-    newPin.value = pin;
-  } catch (e) {
-    ElMessage.error('Please try again after 5 minutes.')
-  }
-}
-async function generatePin() {
-  try {
-    const pin = await (
-      await fetch('/api/auth/generate-pin', { method: 'POST' })
-    ).text();
-    if (!pin) throw new Error('Pin generated error.');
-    ElMessage.success('Pin generated successfully.');
-    newPin.value = pin;
-  } catch (e) {
-    ElMessage.error('Please try again after 5 minutes.')
-  }
-}
-
-async function copyNewPin() {
-  try {
-    copyToClipboard(newPin.value);
-    ElMessage.success('Copied pin.');
-  } catch (e) {
-    ElMessage.error(e instanceof Error ? e.message : 'Failed to copy.')
-  }
-}
+    const viewType = ref('grid');
+    const setView = (type) => {
+      viewType.value = type;
+    }
 
     const openViewer = (file) => {
       currentFile.value = file;
@@ -206,21 +134,13 @@ async function copyNewPin() {
     };
 
     const shareRoom = () => {
-      const roomNumber = currentRoom.value; 
-      const shareUrl = `${window.location.origin}/login?room=${roomNumber}`;
+      const shareUrl = `${window.location.origin}/login?room=${roomId.value}`;
       navigator.clipboard.writeText(shareUrl).then(() => {
         ElMessage.success('Share link copied to clipboard');
       }).catch(() => {
         ElMessage.error('Failed to copy share link');
       });
     };
-
-    onMounted(() => {
-      const room = sessionStorage.getItem('currentRoom');
-      if (room) {
-        currentRoom.value = room;
-      }
-    });
 
     watch(isLoggedIn, (value) => (value ? loading(drive.refresh) : (drive.fileList.value = [])));
 
@@ -232,7 +152,8 @@ async function copyNewPin() {
 
     useTitle(`${appName}`);
     definePageMeta({
-      layout: 'default'
+      layout: 'default',
+      middleware: ['only-auth']
     });
 
     return {

@@ -1,41 +1,48 @@
 import { ElMessage } from "element-plus";
 
-const isLoggedIn = ref(false);
+const isLoggedIn = ref<boolean | null>(null);
+const roomId = ref<string | null>(null);
 
-let lastCheckLogInAt = 0;
-let itIsOkToPromptError = false;
-setTimeout(() => { itIsOkToPromptError = true }, 10 * 1000);
-async function checkIsLoggedIn(force = false) {
-  if (force || lastCheckLogInAt + 5 * 60 * 1000 < Date.now()) {
-    const res = await $fetch('/api/auth/check', { method: 'POST' });
-    lastCheckLogInAt = Date.now();
-    if (res.error && itIsOkToPromptError) ElMessage.error(res.error);
-    isLoggedIn.value = res.isLoggedIn || false;
-  }
-  return isLoggedIn.value
-}
-
-async function login(pin: string) {
-  const res = await $fetch('/api/auth/login', { method: 'POST', body: { pin } });
-  if (res.error && itIsOkToPromptError) ElMessage.error(res.error);
-  isLoggedIn.value = res.isLoggedIn || false;
-  if (res.isLoggedIn) {
-    ElMessage.success('Logged in.');
-    navigateTo('/');
+async function login(_roomId?: string) {
+  try {
+    const res = await $fetch("/api/auth/login", {
+      method: "POST",
+      body: { roomId: _roomId },
+    });
+    const { roomId: id = null, error } = res;
+    if (error) throw error;
+    if (!id) throw new Error("Room does not exist.");
+    isLoggedIn.value = Boolean(id);
+    roomId.value = id || null;
+    ElMessage.success(`Joined room [${id}].`);
+    return res;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    try {
+      if (isLoggedIn.value !== null) ElMessage.error(message);
+    } catch {}
+    isLoggedIn.value = false;
+    roomId.value = null;
+    return { roomId: null, error: message };
   }
 }
 
 async function logout() {
-  await $fetch('/api/auth/logout', { method: 'POST' });
+  await $fetch("/api/auth/logout", { method: "POST" });
   isLoggedIn.value = false;
+  roomId.value = null;
 }
 
+await login();
+
 export default function () {
-  checkIsLoggedIn();
+  watch(isLoggedIn, (v) => {
+    if (!v) navigateTo("/login");
+  });
   return {
+    isLoggedIn,
+    roomId,
     login,
     logout,
-    checkIsLoggedIn,
-    isLoggedIn,
-  }
+  };
 }

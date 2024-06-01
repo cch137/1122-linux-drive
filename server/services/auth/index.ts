@@ -4,7 +4,8 @@ import { filesDirPath } from "../constants";
 import random from "@cch137/utils/random";
 
 const auth = {
-  isPin(pin: string) {
+  isPin(pin: any): pin is string {
+    if (typeof pin !== "string" || !pin) return false;
     const userDirname = path.join(filesDirPath, pin);
     if (!fs.existsSync(userDirname)) return false;
     return fs.statSync(userDirname).isDirectory();
@@ -14,6 +15,8 @@ const auth = {
     while (i--) {
       const pin = random.base16(10).toUpperCase();
       if (auth.isPin(pin)) continue;
+      const userDirname = path.join(filesDirPath, pin);
+      fs.mkdirSync(userDirname, { recursive: true });
       return pin;
     }
     throw new Error("Failed to generate pin");

@@ -1,11 +1,10 @@
 import { serialize as serializeCookie } from "cookie";
+import type { AuthCheckResult } from "./login.post";
 
 export default defineEventHandler(async function (
   event
-): Promise<{ error?: string; isLoggedIn: boolean }> {
-  const { req, res } = event.node;
-
-  res.setHeader(
+): Promise<AuthCheckResult> {
+  event.node.res.setHeader(
     "Set-Cookie",
     serializeCookie("token", "", {
       path: "/",
@@ -15,6 +14,5 @@ export default defineEventHandler(async function (
       expires: new Date(),
     })
   );
-
-  return { isLoggedIn: false };
+  return { roomId: null };
 });

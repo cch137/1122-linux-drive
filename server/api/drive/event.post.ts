@@ -2,20 +2,19 @@ import { PIN, SALT } from "~/constants/app";
 import { parse as parseCookie } from "cookie";
 import drive from "~/server/services/drive";
 import Shuttle from "@cch137/utils/shuttle";
+import auth from "~/server/services/auth";
 
 export default defineEventHandler(async function (event) {
   const { req, res } = event.node;
 
   try {
-    const pin = Shuttle.unpackWithHash(
+    const roomId = Shuttle.unpackWithHash(
       parseCookie(req.headers.cookie || "")?.token || "",
       "MD5",
       SALT
-    )as string;
-    if (!pin || !PIN.includes(pin)) return { error: "Not logged in", data: [] };
-  } catch {
-    return { error: "Not logged in", data: [] };
-  }
+    );
+    if (!auth.isPin(roomId)) return;
+  } catch {}
 
   res.writeHead(200, "OK", {
     "Content-Type": "text/event-stream",
@@ -25,9 +24,7 @@ export default defineEventHandler(async function (event) {
     "X-Accel-Buffering": "no",
   });
 
-  function driveOnchange() {
-    res.write("1");
-  }
+  const driveOnchange = () => res.write("1");
   drive.eventTarget.addEventListener("change", driveOnchange);
   setTimeout(() => {
     res.end();

@@ -23,7 +23,7 @@ logout()
     clearSession();
     if (loading) loading.close();
     navigateTo('/');
-    ElMessage.warning('Logout successfully');
+    ElMessage.success('Log out successfully.');
   });
 
 definePageMeta({

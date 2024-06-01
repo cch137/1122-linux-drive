@@ -3,6 +3,7 @@ import { parse as parseCookie } from "cookie";
 import drive from "~/server/services/drive";
 import Shuttle from "@cch137/utils/shuttle";
 import random from "@cch137/utils/random";
+import auth from "~/server/services/auth";
 
 export default defineEventHandler(async function (
   event
@@ -10,14 +11,14 @@ export default defineEventHandler(async function (
   const { req, res } = event.node;
 
   try {
-    const pin = Shuttle.unpackWithHash(
+    const roomId = Shuttle.unpackWithHash(
       parseCookie(req.headers.cookie || "")?.token || "",
       "MD5",
       SALT
-    )as string;
-    if (!pin || !PIN.includes(pin) ) return { error: "Not logged in", data: false };
+    );
+    if (!auth.isPin(roomId)) throw new Error();
   } catch {
-    return { error: "Not logged in", data: false };
+    return { error: "Not joined a room", data: false };
   }
 
   const files = await readMultipartFormData(event);
