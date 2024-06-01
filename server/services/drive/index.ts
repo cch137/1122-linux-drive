@@ -3,11 +3,7 @@ import fs from "fs";
 import path from "path";
 import mime from "mime";
 import chardet from "chardet";
-
-const __filename = url.fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const filesDirPath = path.join(__dirname, "./files");
+import { filesDirPath } from "../constants";
 
 function makeDir() {
   try {

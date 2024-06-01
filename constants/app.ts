@@ -1,7 +1,4 @@
-const appName = "Drive";
-const author = "cch137";
-let PIN = [""]; 
-const SALT = 369112503023;
-
-export { appName, author, PIN, SALT };
-
+export const appName = "Drive";
+export const author = "cch137";
+export let PIN: string[] = [];
+export const SALT = 369112503023;

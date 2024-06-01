@@ -4,8 +4,8 @@
       <div>
         <el-button :icon="Upload" @click="fileInputEl().click()" :loading="isLoading">Upload</el-button>
         <el-button :icon="Refresh" @click="loading(drive.refresh)" :loading="isLoading">Refresh</el-button>
-        <el-button @click="setView('grid')" :disabled="viewType === 'grid'">Grid View</el-button>
-        <el-button @click="setView('list')" :disabled="viewType === 'list'">List View</el-button>
+        <el-button @click="viewType = 'grid'" :disabled="viewType === 'grid'">Grid View</el-button>
+        <el-button @click="viewType = 'list'" :disabled="viewType === 'list'">List View</el-button>
         <form style="display: none;">
           <input class="FileUpload" type="file" multiple @change="loading(() => drive.uploadFiles(fileInputEl().files))" />
         </form>
@@ -60,12 +60,42 @@
     </div>
     <div v-else>
       <h1>Welcome to Drive!</h1>
-      <div class="mt-8 text-center">
-        <el-text size="large">You are not logged in. </el-text>
-        <el-text size="large">Please </el-text>
-        <NuxtLink href="/login">
-          <el-button size="small" class="HomepageLoginButton mb-1">Log In</el-button>
-        </NuxtLink>
+      <div class="mt-8 flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+          <div class="text-xl">
+            Join room
+          </div>
+          <div class="flex gap-2">
+            <div class="flex-1">
+              <el-input :value="loginPin" />
+            </div>
+            <div class="w-20 flex">
+              <el-button class="HomepageLoginButton flex-1">
+                Join
+              </el-button>
+            </div>
+          </div>
+        </div>
+        <el-text type="info" size="large">or</el-text>
+        <div class="flex flex-col gap-1">
+          <div class="text-xl">
+            Create room
+          </div>
+          <div class="flex gap-2">
+            <div class="flex-1">
+              <el-input :value="newPin" readonly>
+                <template #append>
+                  <el-button class="HomepageLoginButton" @click="copyNewPin" :icon="ElIconCopyDocument" circle />
+                </template>
+              </el-input>
+            </div>
+            <div class="w-20 flex">
+              <el-button class="HomepageLoginButton flex-1" @click="generatePin">
+                Create
+              </el-button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -78,16 +108,49 @@ import { Upload, Refresh, Delete } from '@element-plus/icons-vue';
 import { appName } from '~/constants/app';
 import useAuth from '~/composables/useAuth';
 import useDrive from '~/composables/useDrive';
+import copyToClipboard from '@cch137/utils/web/copy-to-clipboard'
 
 const { isLoggedIn } = useAuth();
 const drive = useDrive();
 const { isLoading, fileList } = drive;
 
-const viewType = ref('grid');
+const viewType = ref<'grid'|'list'>('grid');
+const newPin = ref('');
+const loginPin = ref('');
 
-const setView = (type: string) => {
-  viewType.value = type;
-};
+async function login() {
+  try {
+    const pin = await (
+      await fetch('/api/auth/generate-pin', { method: 'POST' })
+    ).text();
+    if (!pin) throw new Error('Pin generated error.');
+    ElMessage.success('Pin generated successfully.');
+    newPin.value = pin;
+  } catch (e) {
+    ElMessage.error('Please try again after 5 minutes.')
+  }
+}
+async function generatePin() {
+  try {
+    const pin = await (
+      await fetch('/api/auth/generate-pin', { method: 'POST' })
+    ).text();
+    if (!pin) throw new Error('Pin generated error.');
+    ElMessage.success('Pin generated successfully.');
+    newPin.value = pin;
+  } catch (e) {
+    ElMessage.error('Please try again after 5 minutes.')
+  }
+}
+
+async function copyNewPin() {
+  try {
+    copyToClipboard(newPin.value);
+    ElMessage.success('Copied pin.');
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : 'Failed to copy.')
+  }
+}
 
 async function loading(func: Function, text = 'Loading...') {
   const loading = ElLoading.service({ text });

@@ -18,7 +18,7 @@ export default defineEventHandler(async function (
       return { isLoggedIn: true };
     }
   } catch {
-    console.error("Invalid token.",PIN);
+    console.error("Invalid token.", PIN);
   }
 
   res.setHeader(

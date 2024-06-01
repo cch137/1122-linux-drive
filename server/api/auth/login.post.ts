@@ -12,9 +12,10 @@ export default defineEventHandler(async function (
   const { req, res } = event.node;
   const checked = rateLimiter.check(getRequestIp(req));
   if (!checked.success) return { isLoggedIn: false, error: checked.message };
-  
+
   const pin = ((await readBody(event)) as { pin?: string })?.pin;
-  if (!pin || !PIN.includes(pin)) return { isLoggedIn: false, error: "Incorrect pin." };
+  if (!pin || !PIN.includes(pin))
+    return { isLoggedIn: false, error: "Incorrect pin." };
 
   res.setHeader(
     "Set-Cookie",
