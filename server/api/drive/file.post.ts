@@ -4,6 +4,7 @@ import drive from "~/server/services/drive";
 import Shuttle from "@cch137/utils/shuttle";
 import random from "@cch137/utils/random";
 import auth from "~/server/services/auth";
+import { readMultipartFormData } from "h3";
 
 export default defineEventHandler(async function (
   event

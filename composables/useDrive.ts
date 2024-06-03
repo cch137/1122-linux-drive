@@ -1,5 +1,3 @@
-
-
 const isLoading = ref(false);
 const fileList = ref<string[]>([]);
 let streamingIsStarted = false;
@@ -60,8 +58,7 @@ async function fetchFileList() {
   isLoading.value = false;
 }
 
-async function uploadFiles(files: FileList | null) {
-  const { roomId } = useAuth();
+async function uploadFiles(roomId: string, files: FileList | null) {
   isLoading.value = true;
   try {
     const formData = new FormData();
@@ -70,17 +67,19 @@ async function uploadFiles(files: FileList | null) {
         formData.append(`${i}`, files[i]);
       }
     }
-    formData.append('roomId', roomId.value); // 添加 roomId 到 formData
+    formData.append('roomId', roomId); // 添加 roomId 到 formData
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/drive/file');
     xhr.send(formData);
     xhr.upload.addEventListener('progress', (ev) => {
       console.log(ev.lengthComputable, ev.loaded, ev.total);
     });
-  } catch {}
-  isLoading.value = false;
+  } catch (error) {
+    console.error('Failed to upload files:', error);
+  } finally {
+    isLoading.value = false;
+  }
 }
-
 
 async function deleteFile(roomId: string, fp: string) {
   isLoading.value = true;

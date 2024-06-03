@@ -9,7 +9,7 @@
         <el-button @click="viewType = 'list'" :disabled="viewType === 'list'">List View</el-button>
         <el-button @click="shareRoom" :icon="ElIconShare">Share Room</el-button>
         <form style="display: none;">
-          <input class="FileUpload" type="file" multiple @change="loading(() => drive.uploadFiles(fileInputEl().files))" />
+          <input class="FileUpload" type="file" multiple @change="loading(() => uploadFiles(fileInputEl().files))" />
         </form>
       </div>
       <div class="FileList mt-8 m-8">
@@ -146,6 +146,19 @@ export default {
       }
     };
 
+    const uploadFiles = async (files) => {
+      isLoading.value = true;
+      try {
+        console.log('Uploading files:', files);
+        await drive.uploadFiles(roomId.value, files);
+        await drive.refresh();
+      } catch (error) {
+        console.error('Failed to upload files:', error);
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
     const shareRoom = () => {
       const shareUrl = `${window.location.origin}/login?room=${roomId.value}`;
       navigator.clipboard.writeText(shareUrl).then(() => {
@@ -182,14 +195,12 @@ export default {
       fileInputEl,
       getFileIcon,
       shareRoom,
-      deleteFile
+      deleteFile,
+      uploadFiles
     };
   }
 };
 </script>
-
-
-
 <style scoped>
 .FileGrid {
   display: grid;

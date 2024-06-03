@@ -32,11 +32,15 @@ export default {
     if (!fs.existsSync(roomPath)) {
       fs.mkdirSync(roomPath, { recursive: true });
     }
+    const filePath = path.join(roomPath, `./${fp}`);
+    console.log('Writing file at path:', filePath);
     eventTarget.dispatchEvent(new Event("change"));
-    fp = path.join(roomPath, `./${fp}`);
     return new Promise((resolve, reject) =>
-      fs.writeFile(fp, content, {}, (err) => {
-        if (err) return reject(err);
+      fs.writeFile(filePath, content, {}, (err) => {
+        if (err) {
+          console.error('Failed to write file:', err);
+          return reject(err);
+        }
         resolve(null);
       })
     );
