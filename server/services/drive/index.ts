@@ -44,11 +44,15 @@ export default {
 
   async deleteFile(roomId: string, fp: string) {
     const roomPath = path.join(filesDirPath, roomId);
-    fp = path.join(roomPath, `./${fp}`);
+    const filePath = path.join(roomPath, `./${fp}`);
+    console.log('Deleting file at path:', filePath);
     eventTarget.dispatchEvent(new Event("change"));
     return new Promise((resolve, reject) =>
-      fs.rm(fp, (err) => {
-        if (err) return reject(err);
+      fs.rm(filePath, (err) => {
+        if (err) {
+          console.error('Failed to remove file:', err);
+          return reject(err);
+        }
         resolve(null);
       })
     );

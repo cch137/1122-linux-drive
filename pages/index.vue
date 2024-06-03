@@ -33,7 +33,7 @@
               type="danger"
               plain
               :loading="isLoading"
-              @click="loading(() => drive.deleteFile(fp))"
+              @click="loading(() => deleteFile(fp))"
             />
           </div>
         </div>
@@ -48,7 +48,7 @@
               :icon="ElIconDelete" type="danger"
               plain
               :loading="isLoading"
-              @click="loading(() => drive.deleteFile(fp))"
+              @click="loading(() => deleteFile(fp))"
             />
           </div>
         </div>
@@ -58,8 +58,8 @@
 </template>
 
 <script>
-import { ref } from 'vue';
-import { ElLoading } from 'element-plus';
+import { ref, watch } from 'vue';
+import { ElLoading, ElMessage } from 'element-plus';
 import { appName } from '~/constants/app';
 import useAuth from '~/composables/useAuth';
 import useDrive from '~/composables/useDrive';
@@ -70,7 +70,7 @@ export default {
     FileViewer
   },
   setup() {
-    const { isLoggedIn,roomId } = useAuth();
+    const { isLoggedIn, roomId } = useAuth();
     const drive = useDrive();
     const { isLoading, fileList } = drive;
     const viewerVisible = ref(false);
@@ -79,7 +79,7 @@ export default {
     const viewType = ref('grid');
     const setView = (type) => {
       viewType.value = type;
-    }
+    };
 
     const openViewer = (file) => {
       currentFile.value = file;
@@ -132,6 +132,20 @@ export default {
       return fileName.split('.').pop() || '';
     };
 
+    const deleteFile = async (fp) => {
+      isLoading.value = true;
+      try {
+        console.log('Deleting file:', fp);
+        console.log('Room ID:', roomId.value);
+        await drive.deleteFile(roomId.value, fp);
+/*         await drive.refresh(); */
+      } catch (error) {
+        console.error('Failed to delete file:', error);
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
     const shareRoom = () => {
       const shareUrl = `${window.location.origin}/login?room=${roomId.value}`;
       navigator.clipboard.writeText(shareUrl).then(() => {
@@ -167,7 +181,8 @@ export default {
       loading,
       fileInputEl,
       getFileIcon,
-      shareRoom
+      shareRoom,
+      deleteFile
     };
   }
 };

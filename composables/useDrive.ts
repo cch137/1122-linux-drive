@@ -81,16 +81,20 @@ async function uploadFiles(files: FileList | null) {
   isLoading.value = false;
 }
 
-async function deleteFile(fp: string) {
-  const { roomId } = useAuth();
+
+async function deleteFile(roomId: string, fp: string) {
   isLoading.value = true;
   try {
+    console.log('Deleting file with roomId:', roomId, 'and fp:', fp);
     await $fetch('/api/drive/file', {
       method: 'DELETE',
-      body: { roomId: roomId.value, fp },
+      body: { roomId, fp },
     });
-  } catch {}
-  isLoading.value = false;
+  } catch (error) {
+    console.error('Failed to delete file:', error);
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 export default function() {
