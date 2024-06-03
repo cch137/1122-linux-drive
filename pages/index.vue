@@ -3,13 +3,13 @@
     <FileViewer :src="currentFile" :show="viewerVisible" @close="viewerVisible = false" />
     <div v-if="isLoggedIn">
       <div>
-        <el-button :icon="Upload" @click="fileInputEl().click()" :loading="isLoading">Upload</el-button>
-        <el-button :icon="Refresh" @click="loading(drive.refresh)" :loading="isLoading">Refresh</el-button>
+        <el-button :icon="ElIconUpload" @click="fileInputEl?.click()" :loading="isLoading">Upload</el-button>
+        <el-button :icon="ElIconRefresh" @click="loading(drive.refresh)" :loading="isLoading">Refresh</el-button>
         <el-button @click="viewType = 'grid'" :disabled="viewType === 'grid'">Grid View</el-button>
         <el-button @click="viewType = 'list'" :disabled="viewType === 'list'">List View</el-button>
         <el-button @click="shareRoom" :icon="ElIconShare">Share Room</el-button>
         <form style="display: none;">
-          <input class="FileUpload" type="file" multiple @change="loading(() => uploadFiles(fileInputEl().files))" />
+          <input class="FileUpload" type="file" multiple ref="fileInputEl" @change="loading(() => uploadFiles(fileInputEl?.files))" />
         </form>
       </div>
       <div class="FileList mt-8 m-8">
@@ -57,7 +57,7 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 import { ref, watch } from 'vue';
 import { ElLoading, ElMessage } from 'element-plus';
 import { appName } from '~/constants/app';
@@ -65,141 +65,111 @@ import useAuth from '~/composables/useAuth';
 import useDrive from '~/composables/useDrive';
 import FileViewer from '~/components/fileviewer.vue';
 
-export default {
-  components: {
-    FileViewer
-  },
-  setup() {
-    const { isLoggedIn, roomId } = useAuth();
-    const drive = useDrive();
-    const { isLoading, fileList } = drive;
-    const viewerVisible = ref(false);
-    const currentFile = ref('');
+const { isLoggedIn, roomId } = useAuth();
+const drive = useDrive();
+const { isLoading, fileList } = drive;
+const viewerVisible = ref(false);
+const currentFile = ref('');
+const fileInputEl = ref<HTMLInputElement>();
 
-    const viewType = ref('grid');
-    const setView = (type) => {
-      viewType.value = type;
-    };
+const viewType = ref<'grid' | 'list'>('grid');
 
-    const openViewer = (file) => {
-      currentFile.value = file;
-      viewerVisible.value = true;
-    };
+const openViewer = (file: string) => {
+  currentFile.value = file;
+  viewerVisible.value = true;
+};
 
-    const loading = async (func, text = 'Loading...') => {
-      const loading = ElLoading.service({ text });
-      try {
-        return await func();
-      } finally {
-        loading.close();
-      }
-    };
-
-    const fileInputEl = () => {
-      return document.querySelector('.FileUpload');
-    };
-
-    const isImage = (fileName) => {
-      return /\.(jpg|jpeg|png|gif|bmp)$/i.test(fileName);
-    };
-
-    const getFileIcon = (fileName) => {
-      const extension = getFileExtension(fileName).toLowerCase();
-      if (isImage(fileName)) {
-        return `/api/drive/file/${fileName}`;
-      }
-      switch (extension) {
-        case 'pdf':
-          return '/pdf.png';
-        case 'doc':
-        case 'docx':
-          return '/doc.png';
-        case 'ppt':
-        case 'pptx':
-          return '/ppt.png';
-        case 'xls':
-        case 'xlsx':
-          return '/excel.png';
-        case 'zip':
-        case 'rar':
-          return '/zip.png';
-        default:
-          return '/other.png';
-      }
-    };
-
-    const getFileExtension = (fileName) => {
-      return fileName.split('.').pop() || '';
-    };
-
-    const deleteFile = async (fp) => {
-      isLoading.value = true;
-      try {
-        console.log('Deleting file:', fp);
-        console.log('Room ID:', roomId.value);
-        await drive.deleteFile(fp);
-/*         await drive.refresh(); */
-      } catch (error) {
-        console.error('Failed to delete file:', error);
-      } finally {
-        isLoading.value = false;
-      }
-    };
-
-    const uploadFiles = async (files) => {
-      isLoading.value = true;
-      try {
-        console.log('Uploading files:', files);
-        await drive.uploadFiles(files);
-        await drive.refresh();
-      } catch (error) {
-        console.error('Failed to upload files:', error);
-      } finally {
-        isLoading.value = false;
-      }
-    };
-
-    const shareRoom = () => {
-      const shareUrl = `${window.location.origin}/login?room=${roomId.value}`;
-      navigator.clipboard.writeText(shareUrl).then(() => {
-        ElMessage.success('Share link copied to clipboard');
-      }).catch(() => {
-        ElMessage.error('Failed to copy share link');
-      });
-    };
-
-    watch(isLoggedIn, (value) => (value ? loading(drive.refresh) : (drive.fileList.value = [])));
-
-    if (process.client) {
-      if (isLoggedIn.value) {
-        loading(drive.refresh);
-      }
-    }
-
-    useTitle(`${appName}`);
-    definePageMeta({
-      layout: 'default',
-      middleware: ['only-auth']
-    });
-
-    return {
-      isLoggedIn,
-      isLoading,
-      fileList,
-      viewType,
-      viewerVisible,
-      currentFile,
-      setView,
-      openViewer,
-      loading,
-      fileInputEl,
-      getFileIcon,
-      shareRoom,
-      deleteFile,
-      uploadFiles
-    };
+const loading = async (func: Function, text = 'Loading...') => {
+  const loading = ElLoading.service({ text });
+  try {
+    return await func();
+  } finally {
+    loading.close();
   }
 };
+
+const isImage = (fileName: string) => {
+  return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(fileName);
+};
+
+const getFileIcon = (fileName: string) => {
+  const extension = getFileExtension(fileName).toLowerCase();
+  if (isImage(fileName)) {
+    return `/api/drive/file/${fileName}`;
+  }
+  switch (extension) {
+    case 'pdf':
+      return '/pdf.png';
+    case 'doc':
+    case 'docx':
+      return '/doc.png';
+    case 'ppt':
+    case 'pptx':
+      return '/ppt.png';
+    case 'xls':
+    case 'xlsx':
+      return '/excel.png';
+    case 'zip':
+    case 'rar':
+      return '/zip.png';
+    default:
+      return '/other.png';
+  }
+};
+
+const getFileExtension = (fileName: string) => {
+  return fileName.split('.').pop() || '';
+};
+
+const deleteFile = async (fp: string) => {
+  isLoading.value = true;
+  try {
+    console.log('Deleting file:', fp);
+    console.log('Room ID:', roomId.value);
+    await drive.deleteFile(fp);
+  } catch (error) {
+    console.error('Failed to delete file:', error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const uploadFiles = async (files?: FileList | null) => {
+  if (!files) return;
+  isLoading.value = true;
+  try {
+    console.log('Uploading files:', files);
+    await drive.uploadFiles(files);
+    await drive.refresh();
+  } catch (error) {
+    console.error('Failed to upload files:', error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const shareRoom = () => {
+  const shareUrl = `${window.location.origin}/login?room=${roomId.value}`;
+  navigator.clipboard.writeText(shareUrl).then(() => {
+    ElMessage.success('Share link copied to clipboard');
+  }).catch(() => {
+    ElMessage.error('Failed to copy share link');
+  });
+};
+
+watch(isLoggedIn, (value) => (value ? loading(drive.refresh) : (drive.fileList.value = [])));
+
+if (process.client) {
+  if (isLoggedIn.value) {
+    loading(drive.refresh);
+  }
+}
+
+useTitle(`${appName}`);
+definePageMeta({
+  layout: 'default',
+  middleware: ['only-auth']
+});
 </script>
 <style scoped>
 .FileGrid {
