@@ -70,10 +70,9 @@ export default {
     FileViewer
   },
   setup() {
-    const { isLoggedIn } = useAuth();
+    const { isLoggedIn,roomId } = useAuth();
     const drive = useDrive();
     const { isLoading, fileList } = drive;
-
     const viewerVisible = ref(false);
     const currentFile = ref('');
 
