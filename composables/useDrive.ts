@@ -1,8 +1,9 @@
+
+
 const isLoading = ref(false);
-
 const fileList = ref<string[]>([]);
-
 let streamingIsStarted = false;
+
 async function startStreaming() {
   if (streamingIsStarted) return;
 
@@ -38,8 +39,12 @@ async function startStreaming() {
 }
 
 async function _fetchFileList() {
+  const { roomId } = useAuth();
   try {
-    const res = await $fetch('/api/drive/list', { method: 'POST' });
+    const res = await $fetch('/api/drive/list', {
+      method: 'POST',
+      body: { roomId: roomId.value },
+    });
     fileList.value = res.data;
     startStreaming();
   } catch {
@@ -56,6 +61,7 @@ async function fetchFileList() {
 }
 
 async function uploadFiles(files: FileList | null) {
+  const { roomId } = useAuth();
   isLoading.value = true;
   try {
     const formData = new FormData();
@@ -64,21 +70,25 @@ async function uploadFiles(files: FileList | null) {
         formData.append(`${i}`, files[i]);
       }
     }
+    formData.append('roomId', roomId.value); // 添加 roomId 到 formData
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/drive/file');
     xhr.send(formData);
     xhr.upload.addEventListener('progress', (ev) => {
       console.log(ev.lengthComputable, ev.loaded, ev.total);
     });
-    // await $fetch('/api/drive/file', { method: 'POST', body: formData });
   } catch {}
   isLoading.value = false;
 }
 
 async function deleteFile(fp: string) {
+  const { roomId } = useAuth();
   isLoading.value = true;
   try {
-    await $fetch('/api/drive/file', { method: 'DELETE', body: { fp } });
+    await $fetch('/api/drive/file', {
+      method: 'DELETE',
+      body: { roomId: roomId.value, fp },
+    });
   } catch {}
   isLoading.value = false;
 }

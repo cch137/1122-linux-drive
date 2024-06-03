@@ -6,7 +6,7 @@
         <div class="flex flex-col gap-1">
           <div class="flex gap-2">
             <div class="flex-1">
-              <el-input ref="roomIdInput" v-model:="roomId" placeholder="Room ID">
+              <el-input ref="roomIdInput" v-model="roomId" placeholder="Room ID">
                 <template #append>
                   <el-button class="HomepageLoginButton" @click="copyNewRoomId" :icon="ElIconCopyDocument" circle />
                 </template>
@@ -33,7 +33,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { ElMessage } from 'element-plus';
 import { appName } from '~/constants/app';
 import copyToClipboard from '@cch137/utils/web/copy-to-clipboard';
 
@@ -41,10 +43,20 @@ const auth = useAuth();
 const roomId = ref('');
 const roomIdInput = ref<HTMLInputElement>();
 
+const router = useRouter();
+const route = useRoute();
+
+onMounted(() => {
+  const roomParam = route.query.room;
+  if (roomParam) {
+    roomId.value = String(roomParam);
+  }
+});
+
 async function login() {
   try {
     await auth.login(roomId.value);
-    if (auth.isLoggedIn.value) navigateTo('/');
+    if (auth.isLoggedIn.value) router.push('/');
   } catch (e) {
     ElMessage.error('Please try again after 5 minutes.')
   }
@@ -76,7 +88,9 @@ definePageMeta({
   layout: 'default',
   middleware: ['only-no-auth']
 });
+
 </script>
+
 
 <style>
 .LoginWindow {

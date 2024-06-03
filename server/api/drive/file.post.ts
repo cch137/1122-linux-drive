@@ -10,8 +10,9 @@ export default defineEventHandler(async function (
 ): Promise<{ error?: string; data: boolean }> {
   const { req, res } = event.node;
 
+  let roomId;
   try {
-    const roomId = Shuttle.unpackWithHash(
+    roomId = Shuttle.unpackWithHash(
       parseCookie(req.headers.cookie || "")?.token || "",
       "MD5",
       SALT
@@ -26,8 +27,8 @@ export default defineEventHandler(async function (
     await Promise.all(
       files.map((file) => {
         return drive.writeFile(
-          file.filename ||
-            `${random.base16(16)}.${(file.type || "").split("/").at(-1)}`,
+          roomId,
+          file.filename || `${random.base16(16)}.${(file.type || "").split("/").at(-1)}`,
           file.data
         );
       })

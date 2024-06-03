@@ -1,29 +1,25 @@
-import url from "url";
 import fs from "fs";
 import path from "path";
 import mime from "mime";
 import chardet from "chardet";
 import { filesDirPath } from "../constants";
 
-function makeDir() {
-  try {
-    fs.mkdirSync(filesDirPath, { recursive: true });
-  } catch {}
-}
-
-makeDir();
-
 const eventTarget = new EventTarget();
 
 export default {
   eventTarget,
 
-  fileList() {
-    return fs.readdirSync(filesDirPath);
+  fileList(roomId: string) {
+    const roomPath = path.join(filesDirPath, roomId);
+    if (!fs.existsSync(roomPath)) {
+      return [];
+    }
+    return fs.readdirSync(roomPath);
   },
 
-  readFile(fp: string) {
-    fp = path.join(filesDirPath, `./${fp}`);
+  readFile(roomId: string, fp: string) {
+    const roomPath = path.join(filesDirPath, roomId);
+    fp = path.join(roomPath, `./${fp}`);
     const exists = fs.existsSync(fp);
     const content = exists ? fs.readFileSync(fp) : Buffer.from("");
     const mimetype = exists ? mime.getType(fp) || "application" : "";
@@ -33,9 +29,13 @@ export default {
     return { exists, content, mimetype, encoding };
   },
 
-  async writeFile(fp: string, content: Buffer) {
+  async writeFile(roomId: string, fp: string, content: Buffer) {
+    const roomPath = path.join(filesDirPath, roomId);
+    if (!fs.existsSync(roomPath)) {
+      fs.mkdirSync(roomPath, { recursive: true });
+    }
     eventTarget.dispatchEvent(new Event("change"));
-    fp = path.join(filesDirPath, `./${fp}`);
+    fp = path.join(roomPath, `./${fp}`);
     return new Promise((resolve, reject) =>
       fs.writeFile(fp, content, {}, (err) => {
         if (err) return reject(err);
@@ -44,9 +44,10 @@ export default {
     );
   },
 
-  async deleteFile(fp: string) {
+  async deleteFile(roomId: string, fp: string) {
+    const roomPath = path.join(filesDirPath, roomId);
+    fp = path.join(roomPath, `./${fp}`);
     eventTarget.dispatchEvent(new Event("change"));
-    fp = path.join(filesDirPath, `./${fp}`);
     return new Promise((resolve, reject) =>
       fs.rm(fp, (err) => {
         if (err) return reject(err);

@@ -58,8 +58,8 @@
 </template>
 
 <script>
-import { ref, watch } from 'vue';
-import { ElLoading, ElMessage } from 'element-plus';
+import { ref } from 'vue';
+import { ElLoading } from 'element-plus';
 import { appName } from '~/constants/app';
 import useAuth from '~/composables/useAuth';
 import useDrive from '~/composables/useDrive';
@@ -70,7 +70,7 @@ export default {
     FileViewer
   },
   setup() {
-    const { roomId, isLoggedIn } = useAuth();
+    const { isLoggedIn } = useAuth();
     const drive = useDrive();
     const { isLoading, fileList } = drive;
 
@@ -173,6 +173,8 @@ export default {
   }
 };
 </script>
+
+
 
 <style scoped>
 .FileGrid {
