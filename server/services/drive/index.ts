@@ -23,9 +23,7 @@ export default {
     const exists = fs.existsSync(fp);
     const content = exists ? fs.readFileSync(fp) : Buffer.from("");
     const mimetype = exists ? mime.getType(fp) || "application" : "";
-    const encoding = mimetype.startsWith("text")
-      ? chardet.detect(content)
-      : undefined;
+    const encoding = mimetype.startsWith("text") ? chardet.detect(content) : undefined;
     return { exists, content, mimetype, encoding };
   },
 
