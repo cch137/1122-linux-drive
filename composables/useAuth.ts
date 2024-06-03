@@ -36,9 +36,19 @@ async function logout() {
 await login();
 
 export default function () {
+  const route = useRoute();
+
   watch(isLoggedIn, (v) => {
     if (!v) navigateTo("/login");
   });
+
+  onMounted(() => {
+    if (route.path !== "/login") return;
+    let queryRoomId = route.query.room;
+    queryRoomId = Array.isArray(queryRoomId) ? queryRoomId[0] : queryRoomId;
+    roomId.value = queryRoomId;
+  });
+
   return {
     isLoggedIn,
     roomId,

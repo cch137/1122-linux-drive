@@ -33,24 +33,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { appName } from '~/constants/app';
 import copyToClipboard from '@cch137/utils/web/copy-to-clipboard';
 
 const auth = useAuth();
+const router = useRouter();
 const roomId = ref('');
 const roomIdInput = ref<HTMLInputElement>();
 
-const router = useRouter();
-const route = useRoute();
-
 onMounted(() => {
-  const roomParam = route.query.room;
-  if (roomParam) {
-    roomId.value = String(roomParam);
-  }
+  const id = auth.roomId.value || '';
+  if (!id) return;
+  roomId.value = id;
+  login();
 });
 
 async function login() {
