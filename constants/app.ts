@@ -1,4 +1,3 @@
 export const appName = "Drive";
-export const author = "cch137";
-export let PIN: string[] = [];
+export const author = "Linux1122";
 export const SALT = 369112503023;

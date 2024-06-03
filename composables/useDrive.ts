@@ -22,12 +22,12 @@ async function startStreaming() {
       }
       readChunks();
     });
-  }
+  };
 
-  const streamRes = await fetch('/api/drive/event', {
-    method: 'POST',
-    body: '{}',
-    signal: controller.signal
+  const streamRes = await fetch("/api/drive/event", {
+    method: "POST",
+    body: "{}",
+    signal: controller.signal,
   });
 
   // @ts-ignore
@@ -39,9 +39,8 @@ async function startStreaming() {
 async function _fetchFileList() {
   const { roomId } = useAuth();
   try {
-    const res = await $fetch('/api/drive/list', {
-      method: 'POST',
-      body: { roomId: roomId.value },
+    const res = await $fetch("/api/drive/list", {
+      method: "POST",
     });
     fileList.value = res.data;
     startStreaming();
@@ -58,7 +57,7 @@ async function fetchFileList() {
   isLoading.value = false;
 }
 
-async function uploadFiles(roomId: string, files: FileList | null) {
+async function uploadFiles(files: FileList | null) {
   isLoading.value = true;
   try {
     const formData = new FormData();
@@ -67,36 +66,34 @@ async function uploadFiles(roomId: string, files: FileList | null) {
         formData.append(`${i}`, files[i]);
       }
     }
-    formData.append('roomId', roomId); // 添加 roomId 到 formData
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/drive/file');
+    xhr.open("POST", "/api/drive/file");
     xhr.send(formData);
-    xhr.upload.addEventListener('progress', (ev) => {
+    xhr.upload.addEventListener("progress", (ev) => {
       console.log(ev.lengthComputable, ev.loaded, ev.total);
     });
   } catch (error) {
-    console.error('Failed to upload files:', error);
+    console.error("Failed to upload files:", error);
   } finally {
     isLoading.value = false;
   }
 }
 
-async function deleteFile(roomId: string, fp: string) {
+async function deleteFile(fp: string) {
   isLoading.value = true;
   try {
-    console.log('Deleting file with roomId:', roomId, 'and fp:', fp);
-    await $fetch('/api/drive/file', {
-      method: 'DELETE',
-      body: { roomId, fp },
+    await $fetch("/api/drive/file", {
+      method: "DELETE",
+      body: { fp },
     });
   } catch (error) {
-    console.error('Failed to delete file:', error);
+    console.error("Failed to delete file:", error);
   } finally {
     isLoading.value = false;
   }
 }
 
-export default function() {
+export default function () {
   return {
     fileList,
     isLoading,

@@ -137,7 +137,7 @@ export default {
       try {
         console.log('Deleting file:', fp);
         console.log('Room ID:', roomId.value);
-        await drive.deleteFile(roomId.value, fp);
+        await drive.deleteFile(fp);
 /*         await drive.refresh(); */
       } catch (error) {
         console.error('Failed to delete file:', error);
@@ -150,7 +150,7 @@ export default {
       isLoading.value = true;
       try {
         console.log('Uploading files:', files);
-        await drive.uploadFiles(roomId.value, files);
+        await drive.uploadFiles(files);
         await drive.refresh();
       } catch (error) {
         console.error('Failed to upload files:', error);

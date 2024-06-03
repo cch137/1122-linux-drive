@@ -1,4 +1,4 @@
-import { PIN, SALT } from "~/constants/app";
+import { SALT } from "~/constants/app";
 import { parse as parseCookie } from "cookie";
 import drive from "~/server/services/drive";
 import Shuttle from "@cch137/utils/shuttle";
@@ -28,7 +28,9 @@ export default defineEventHandler(async function (
     await Promise.all(
       files.map((file) => {
         if (file.filename && file.data.length > 0) {
-          const filename = file.filename || `${random.base16(16)}.${(file.type || "").split("/").at(-1)}`;
+          const filename =
+            file.filename ||
+            `${random.base16(16)}.${(file.type || "").split("/").at(-1)}`;
           return drive.writeFile(roomId, filename, file.data);
         }
       })
