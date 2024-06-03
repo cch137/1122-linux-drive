@@ -27,11 +27,10 @@ export default defineEventHandler(async function (
   if (files !== undefined) {
     await Promise.all(
       files.map((file) => {
-        return drive.writeFile(
-          roomId,
-          file.filename || `${random.base16(16)}.${(file.type || "").split("/").at(-1)}`,
-          file.data
-        );
+        if (file.filename && file.data.length > 0) {
+          const filename = file.filename || `${random.base16(16)}.${(file.type || "").split("/").at(-1)}`;
+          return drive.writeFile(roomId, filename, file.data);
+        }
       })
     );
   }
