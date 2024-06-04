@@ -14,7 +14,7 @@ async function login(_roomId?: string) {
     if (!id) throw new Error("Room does not exist.");
     isLoggedIn.value = Boolean(id);
     roomId.value = id || null;
-    ElMessage.success(`Joined room [${id}].`);
+/*     ElMessage.success(`Joined room [${id}].`); */
     return res;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

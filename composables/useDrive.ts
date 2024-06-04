@@ -10,7 +10,7 @@ async function startStreaming() {
   const decoder = new TextDecoder();
 
   const readChunks = async () => {
-    await reader.read().then(async ({ value, done }) => {
+    reader.read().then(async ({ value, done }) => {
       if (done) {
         streamingIsStarted = false;
         startStreaming();
@@ -57,23 +57,26 @@ async function fetchFileList() {
   isLoading.value = false;
 }
 
-async function uploadFiles(files: FileList | null) {
+
+async function uploadFiles(files: File[], overwrite = false) {
   isLoading.value = true;
   try {
     const formData = new FormData();
-    if (files !== null) {
-      for (let i = 0; i < files.length; i++) {
-        formData.append(`${i}`, files[i]);
+    for (const file of files) {
+      if (file.name) {
+        formData.append('files', file);
       }
     }
+    formData.append('roomId', roomId.value); // 添加 roomId 到 formData
+    formData.append('overwrite', overwrite.toString()); // 添加 overwrite 到 formData
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/drive/file");
+    xhr.open('POST', '/api/drive/file');
     xhr.send(formData);
-    xhr.upload.addEventListener("progress", (ev) => {
+    xhr.upload.addEventListener('progress', (ev) => {
       console.log(ev.lengthComputable, ev.loaded, ev.total);
     });
   } catch (error) {
-    console.error("Failed to upload files:", error);
+    console.error('Failed to upload files:', error);
   } finally {
     isLoading.value = false;
   }
@@ -82,18 +85,19 @@ async function uploadFiles(files: FileList | null) {
 async function deleteFile(fp: string) {
   isLoading.value = true;
   try {
-    await $fetch("/api/drive/file", {
-      method: "DELETE",
+/*     console.log('Deleting file with roomId:', roomId.value, 'and fp:', fp); */
+    await $fetch('/api/drive/file', {
+      method: 'DELETE',
       body: { fp },
     });
   } catch (error) {
-    console.error("Failed to delete file:", error);
+    console.error('Failed to delete file:', error);
   } finally {
     isLoading.value = false;
   }
 }
 
-export default function () {
+export default function() {
   return {
     fileList,
     isLoading,

@@ -24,13 +24,16 @@ export default defineEventHandler(async function (
   }
 
   const files = await readMultipartFormData(event);
+  const overwrite = files.find(file => file.name === 'overwrite')?.data.toString() === 'true';
+
   if (files !== undefined) {
     await Promise.all(
-      files.map((file) => {
+      files.map(async (file) => {
         if (file.filename && file.data.length > 0) {
-          const filename =
-            file.filename ||
-            `${random.base16(16)}.${(file.type || "").split("/").at(-1)}`;
+          let filename = file.filename || `${random.base16(16)}.${(file.type || "").split("/").at(-1)}`;
+          if (!overwrite) {
+            filename = await getUniqueFileName(filename, roomId);
+          }
           return drive.writeFile(roomId, filename, file.data);
         }
       })
@@ -38,3 +41,18 @@ export default defineEventHandler(async function (
   }
   return { data: true };
 });
+
+const getUniqueFileName = async (filename, roomId) => {
+  const name = filename.substring(0, filename.lastIndexOf('.'));
+  const extension = filename.substring(filename.lastIndexOf('.'));
+  let newName = filename;
+  let index = 1;
+  const existingFiles = await drive.fileList(roomId);
+
+  while (existingFiles.includes(newName)) {
+    newName = `${name}(${index})${extension}`;
+    index++;
+  }
+
+  return newName;
+};

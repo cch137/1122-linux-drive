@@ -9,7 +9,7 @@
         <el-button @click="viewType = 'list'" :disabled="viewType === 'list'">List View</el-button>
         <el-button @click="shareRoom" :icon="ElIconShare">Share Room</el-button>
         <form style="display: none;">
-          <input class="FileUpload" type="file" multiple ref="fileInputEl" @change="loading(() => uploadFiles(fileInputEl?.files))" />
+          <input class="FileUpload" type="file" multiple ref="fileInputEl" @change="loading(() => handleFileUpload(fileInputEl?.files))" />
         </form>
       </div>
       <div class="FileList mt-8 m-8">
@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { ElLoading, ElMessage } from 'element-plus';
+import { ElLoading, ElMessage, ElMessageBox } from 'element-plus';
 import { appName } from '~/constants/app';
 import useAuth from '~/composables/useAuth';
 import useDrive from '~/composables/useDrive';
@@ -71,7 +71,7 @@ const { isLoading, fileList } = drive;
 const viewerVisible = ref(false);
 const currentFile = ref('');
 const fileInputEl = ref<HTMLInputElement>();
-
+const router = useRouter();
 const viewType = ref<'grid' | 'list'>('grid');
 
 const openViewer = (file: string) => {
@@ -127,6 +127,7 @@ const deleteFile = async (fp: string) => {
     console.log('Deleting file:', fp);
     console.log('Room ID:', roomId.value);
     await drive.deleteFile(fp);
+    ElMessage.warning(`File [${fp}] deleted.`);
   } catch (error) {
     console.error('Failed to delete file:', error);
   } finally {
@@ -134,13 +135,79 @@ const deleteFile = async (fp: string) => {
   }
 };
 
-const uploadFiles = async (files?: FileList | null) => {
+const handleFileUpload = async (files?: FileList | null) => {
   if (!files) return;
   isLoading.value = true;
   try {
-    console.log('Uploading files:', files);
-    await drive.uploadFiles(files);
+    const existingFiles = fileList.value;
+    const filesToUpload = Array.from(files);
+
+    for (const file of filesToUpload) {
+      if (existingFiles.includes(file.name)) {
+        await ElMessageBox.confirm(
+          `File ${file.name} already exists. Do you want to overwrite it or create a copy?`,
+          'File Exists',
+          {
+            confirmButtonText: 'Overwrite',
+            cancelButtonText: 'Create Copy',
+            type: 'warning',
+          }
+        ).then(async () => {
+          // Overwrite the file
+          uploadFiles([file], true);
+        }).catch(async () => {
+          // Create a copy
+          const newFileName = getUniqueFileName(file.name, existingFiles);
+          const newFile = new File([file], newFileName, { type: file.type });
+          await uploadFiles([newFile], false);
+        });
+      } else {
+        await uploadFiles([file], false);
+      }
+    }
+
     await drive.refresh();
+  } catch (error) {
+    console.error('Failed to upload files:', error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const getUniqueFileName = (fileName: string, existingFiles: string[]) => {
+  const name = fileName.substring(0, fileName.lastIndexOf('.'));
+  const extension = fileName.substring(fileName.lastIndexOf('.'));
+  let newName = fileName;
+  let index = 1;
+
+  while (existingFiles.includes(newName)) {
+    newName = `${name}(${index})${extension}`;
+    index++;
+  }
+
+  return newName;
+};
+
+const uploadFiles = async (files: File[], overwrite = false) => {
+  isLoading.value = true;
+  try {
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append('files', file);
+    }
+    formData.append('roomId', roomId.value);
+    formData.append('overwrite', overwrite.toString());
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/drive/file');
+    xhr.send(formData);
+    xhr.upload.addEventListener('progress', (ev) => {
+      console.log(ev.lengthComputable, ev.loaded, ev.total);
+    });
+    ElMessage.success('File uploaded successfully');
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 700);
+   
   } catch (error) {
     console.error('Failed to upload files:', error);
   } finally {
@@ -171,6 +238,7 @@ definePageMeta({
   middleware: ['only-auth']
 });
 </script>
+
 <style scoped>
 .FileGrid {
   display: grid;
