@@ -11,7 +11,7 @@ export default defineEventHandler(async function (
 ): Promise<{ error?: string; data: boolean }> {
   const { req, res } = event.node;
 
-  let roomId;
+  let roomId: unknown;
   try {
     roomId = Shuttle.unpackWithHash(
       parseCookie(req.headers.cookie || "")?.token || "",
@@ -24,7 +24,7 @@ export default defineEventHandler(async function (
   }
 
   const files = await readMultipartFormData(event);
-  const overwrite = files.find(file => file.name === 'overwrite')?.data.toString() === 'true';
+  const overwrite = files?.find(file => file.name === 'overwrite')?.data.toString() === 'true';
 
   if (files !== undefined) {
     await Promise.all(
@@ -32,9 +32,9 @@ export default defineEventHandler(async function (
         if (file.filename && file.data.length > 0) {
           let filename = file.filename || `${random.base16(16)}.${(file.type || "").split("/").at(-1)}`;
           if (!overwrite) {
-            filename = await getUniqueFileName(filename, roomId);
+            filename = await getUniqueFileName(filename, roomId as string);
           }
-          return drive.writeFile(roomId, filename, file.data);
+          return drive.writeFile(roomId as string, filename, file.data);
         }
       })
     );
@@ -42,7 +42,7 @@ export default defineEventHandler(async function (
   return { data: true };
 });
 
-const getUniqueFileName = async (filename, roomId) => {
+const getUniqueFileName = async (filename:string, roomId:string) => {
   const name = filename.substring(0, filename.lastIndexOf('.'));
   const extension = filename.substring(filename.lastIndexOf('.'));
   let newName = filename;

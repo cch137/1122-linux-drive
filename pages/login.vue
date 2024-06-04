@@ -28,35 +28,54 @@
           </div>
         </div>
       </div>
+
+      <div v-if="recentRooms.length" class="mt-8">
+        <hr />
+        <h3>Recently Rooms</h3>
+        <el-list class="el-list-with-scrollbar"> 
+          <el-list-item v-for="room in recentRooms" :key="room.roomId" @click="joinRecentRoom(room.roomId)">
+            <div class="room-item">
+              <div>{{ room.roomId }}</div>
+              <div class="timestamp">{{ formatTime(room.timestamp) }}</div>
+            </div>
+          </el-list-item>
+        </el-list>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { appName } from '~/constants/app';
 import copyToClipboard from '@cch137/utils/web/copy-to-clipboard';
+
 
 const auth = useAuth();
 const router = useRouter();
 const roomId = ref('');
 const roomIdInput = ref<HTMLInputElement>();
+const recentRooms = ref<{ roomId: string; timestamp: number }[]>([]);
 
 onMounted(() => {
   const id = auth.roomId.value || '';
-  if (!id) return;
-  roomId.value = id;
-  login();
+  if (id) {
+    roomId.value = id;
+    login();
+  }
+  loadRecentRooms();
 });
 
 async function login() {
   try {
     await auth.login(roomId.value);
-    if (auth.isLoggedIn.value) router.push('/');
+    if (auth.isLoggedIn.value) {
+      saveRecentRoom(roomId.value);
+      router.push('/');
+    }
   } catch (e) {
-    ElMessage.error('Please try again after 5 minutes.')
+    ElMessage.error('Please try again after 5 minutes.');
   }
 }
 
@@ -68,7 +87,7 @@ async function generatePin() {
     roomId.value = pin;
     roomIdInput.value?.focus();
   } catch (e) {
-    ElMessage.error('Please try again after 5 minutes.')
+    ElMessage.error('Please try again after 5 minutes.');
   }
 }
 
@@ -77,8 +96,33 @@ async function copyNewRoomId() {
     copyToClipboard(roomId.value);
     ElMessage.success('Copied room id.');
   } catch (e) {
-    ElMessage.error(e instanceof Error ? e.message : 'Failed to copy.')
+    ElMessage.error(e instanceof Error ? e.message : 'Failed to copy.');
   }
+}
+
+function saveRecentRoom(roomId: string) {
+  const timestamp = Date.now();
+  const recentRooms = JSON.parse(localStorage.getItem('recentRooms') || '[]');
+  const newRooms = recentRooms.filter((room: { roomId: string; }) => room.roomId !== roomId);
+  newRooms.unshift({ roomId, timestamp });
+  localStorage.setItem('recentRooms', JSON.stringify(newRooms));
+  loadRecentRooms();
+}
+
+function loadRecentRooms() {
+  const recentRoomsData = JSON.parse(localStorage.getItem('recentRooms') || '[]');
+  const twelveHoursAgo = Date.now() - 12 * 60 * 60 * 1000;
+  recentRooms.value = recentRoomsData.filter((room: { timestamp: number; }) => room.timestamp > twelveHoursAgo);
+}
+
+function joinRecentRoom(id: string) {
+  roomId.value = id;
+  login();
+}
+
+function formatTime(timestamp: number) {
+  const date = new Date(timestamp);
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
 }
 
 useTitle(`Log In - ${appName}`);
@@ -86,11 +130,25 @@ definePageMeta({
   layout: 'default',
   middleware: ['only-no-auth']
 });
-
 </script>
 
+<style scoped>
+.room-item {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
 
-<style>
+.room-item:hover {
+  background-color: #717171;
+}
+
+.timestamp {
+  margin-left: 20px;
+}
 .LoginWindow {
   --h: 185px;
   margin: auto;
@@ -99,4 +157,19 @@ definePageMeta({
   width: 320px;
   box-shadow: var(--el-box-shadow);
 }
+.LoginWindow {
+  --h: 185px;
+  margin: auto;
+  margin-top: calc(((100vh - 56px) / 2) - (var(--h) / 2));
+  max-width: 90vw;
+  width: 320px;
+  box-shadow: var(--el-box-shadow);
+}
+.el-list-with-scrollbar {
+  height: 200px;
+  overflow-y: scroll;
+  display: block;
+}
 </style>
+
+

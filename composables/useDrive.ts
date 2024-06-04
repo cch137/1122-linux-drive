@@ -1,3 +1,4 @@
+import { ref } from 'vue'; // Import the ref function
 const isLoading = ref(false);
 const fileList = ref<string[]>([]);
 let streamingIsStarted = false;
@@ -61,20 +62,35 @@ async function fetchFileList() {
 async function uploadFiles(files: File[], overwrite = false) {
   isLoading.value = true;
   try {
-    const formData = new FormData();
-    for (const file of files) {
-      if (file.name) {
-        formData.append('files', file);
+    // ...existing code...
+
+    async function uploadFiles(files: File[], overwrite = false) {
+      isLoading.value = true;
+      const roomId = ref(''); // Add the missing roomId variable
+      try {
+        const formData = new FormData();
+        for (const file of files) {
+          if (file.name) {
+            formData.append('files', file);
+          }
+        }
+        formData.append('roomId', roomId.value); // 添加 roomId 到 formData
+        formData.append('overwrite', overwrite.toString()); // 添加 overwrite 到 formData
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/drive/file');
+        xhr.send(formData);
+        xhr.upload.addEventListener('progress', (ev) => {
+          console.log(ev.lengthComputable, ev.loaded, ev.total);
+        });
+      } catch (error) {
+        console.error('Failed to upload files:', error);
+      } finally {
+        isLoading.value = false;
       }
     }
-    formData.append('roomId', roomId.value); // 添加 roomId 到 formData
-    formData.append('overwrite', overwrite.toString()); // 添加 overwrite 到 formData
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/drive/file');
-    xhr.send(formData);
-    xhr.upload.addEventListener('progress', (ev) => {
-      console.log(ev.lengthComputable, ev.loaded, ev.total);
-    });
+
+    // ...existing code...
+
   } catch (error) {
     console.error('Failed to upload files:', error);
   } finally {
