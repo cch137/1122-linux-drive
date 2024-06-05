@@ -1,11 +1,11 @@
 import { SALT } from "~/constants/app";
-import RateLimiter from "@cch137/utils/rate-limiter";
+// import RateLimiter from "@cch137/utils/rate-limiter";
 import getRequestIp from "@cch137/utils/server/get-request-ip";
 import Shuttle from "@cch137/utils/shuttle";
 import { parse as parseCookie, serialize as serializeCookie } from "cookie";
 import auth from "~/server/services/auth";
 
-const rateLimiter = new RateLimiter([{ maxCount: 5, timeMs: 1 * 60 * 60 }]);
+// const rateLimiter = new RateLimiter([{ maxCount: 5, timeMs: 1 * 60 * 60 }]);
 
 export type AuthCheckResult = {
   roomId: string | null;
@@ -16,8 +16,8 @@ export default defineEventHandler(async function (
   event
 ): Promise<AuthCheckResult> {
   const { req, res } = event.node;
-  const rateCheck = rateLimiter.check(getRequestIp(req));
-  if (!rateCheck.success) return { roomId: null, error: rateCheck.message };
+  // const rateCheck = rateLimiter.check(getRequestIp(req));
+  // if (!rateCheck.success) return { roomId: null, error: rateCheck.message };
 
   const roomId = (await readBody(event))?.roomId;
   if (!auth.isPin(roomId)) {
