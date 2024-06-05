@@ -9,7 +9,7 @@
         <el-button @click="viewType = 'list'" :disabled="viewType === 'list'">List View</el-button>
         <el-button @click="shareRoom" :icon="ElIconShare">Share Room</el-button>
         <form style="display: none;">
-          <input class="FileUpload" type="file" multiple ref="fileInputEl" @change="loading(() => handleFileUpload(fileInputEl?.files))" />
+          <input class="FileUpload" type="file" multiple ref="fileInputEl" @change="handleChange" />
         </form>
       </div>
       <div class="FileList mt-8 m-8">
@@ -60,6 +60,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { ElLoading, ElMessage, ElMessageBox } from 'element-plus';
+import { useRouter } from 'vue-router';
 import { appName } from '~/constants/app';
 import useAuth from '~/composables/useAuth';
 import useDrive from '~/composables/useDrive';
@@ -136,7 +137,10 @@ const deleteFile = async (fp: string) => {
 };
 
 const handleFileUpload = async (files?: FileList | null) => {
-  if (!files) return;
+  if (!files) {
+    console.log('No files selected');
+    return;
+  }
   isLoading.value = true;
   try {
     const existingFiles = fileList.value;
@@ -154,7 +158,7 @@ const handleFileUpload = async (files?: FileList | null) => {
           }
         ).then(async () => {
           // Overwrite the file
-          uploadFiles([file], true);
+          await uploadFiles([file], true);
         }).catch(async () => {
           // Create a copy
           const newFileName = getUniqueFileName(file.name, existingFiles);
@@ -171,6 +175,21 @@ const handleFileUpload = async (files?: FileList | null) => {
     console.error('Failed to upload files:', error);
   } finally {
     isLoading.value = false;
+    resetFileInput();
+  }
+};
+
+const handleChange = async (event: Event) => {
+  console.log('handleChange called');
+  const target = event.target as HTMLInputElement;
+  if (target.files) {
+    await handleFileUpload(target.files);
+  }
+};
+
+const resetFileInput = () => {
+  if (fileInputEl.value) {
+    fileInputEl.value.value = '';
   }
 };
 
@@ -189,6 +208,8 @@ const getUniqueFileName = (fileName: string, existingFiles: string[]) => {
 };
 
 const uploadFiles = async (files: File[], overwrite = false) => {
+  console.log('Uploading files:');
+  console.log(overwrite);
   isLoading.value = true;
   try {
     const formData = new FormData();
@@ -204,14 +225,12 @@ const uploadFiles = async (files: File[], overwrite = false) => {
       console.log(ev.lengthComputable, ev.loaded, ev.total);
     });
     ElMessage.success('File uploaded successfully');
-    setTimeout(() => {
-      window.location.href = '/';
-    }, 700);
-   
   } catch (error) {
     console.error('Failed to upload files:', error);
   } finally {
     isLoading.value = false;
+    await drive.refresh(); // Refresh file list after upload
+    console.log('refresh');
   }
 };
 
@@ -238,6 +257,7 @@ definePageMeta({
   middleware: ['only-auth']
 });
 </script>
+
 
 <style scoped>
 .FileGrid {
