@@ -14,7 +14,7 @@ async function login(_roomId?: string) {
     if (!id) throw new Error("Room does not exist.");
     isLoggedIn.value = Boolean(id);
     roomId.value = id || null;
-    ElMessage.success(`Joined room [${id}].`);
+/*     ElMessage.success(`Joined room [${id}].`); */
     return res;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -36,9 +36,19 @@ async function logout() {
 await login();
 
 export default function () {
+  const route = useRoute();
+
   watch(isLoggedIn, (v) => {
     if (!v) navigateTo("/login");
   });
+
+  onMounted(() => {
+    if (route.path !== "/login") return;
+    let queryRoomId = route.query.room;
+    queryRoomId = Array.isArray(queryRoomId) ? queryRoomId[0] : queryRoomId;
+    roomId.value = queryRoomId;
+  });
+
   return {
     isLoggedIn,
     roomId,

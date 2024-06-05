@@ -16,8 +16,15 @@ const auth = {
       const pin = random.base16(10).toUpperCase();
       if (auth.isPin(pin)) continue;
       const userDirname = path.join(filesDirPath, pin);
-      fs.mkdirSync(userDirname, { recursive: true });
-      return pin;
+      console.log(`Creating directory at: ${userDirname}`); 
+      try {
+        fs.mkdirSync(userDirname, { recursive: true });
+        console.log(`Successfully created directory at: ${userDirname}`); 
+        return pin;
+      } catch (error) {
+        console.error(`Error creating directory at: ${userDirname}`, error); 
+        throw error;
+      }
     }
     throw new Error("Failed to generate pin");
   },
