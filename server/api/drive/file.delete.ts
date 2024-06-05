@@ -1,7 +1,7 @@
 import { SALT } from "~/constants/app";
 import { parse as parseCookie } from "cookie";
 import drive from "~/server/services/drive";
-import Shuttle from "@cch137/utils/shuttle";
+import { Shuttle } from "@cch137/utils/shuttle";
 import { readBody } from "h3";
 
 export default defineEventHandler(async function (
