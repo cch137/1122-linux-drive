@@ -157,10 +157,12 @@ const handleFileUpload = async (files?: FileList | null) => {
             type: 'warning',
           }
         ).then(async () => {
-          // Overwrite the file
-          await uploadFiles([file], true);
+          // Delete the existing file
+          await deleteFile(file.name);
+          const newFileName = getCoverFileName(file.name);
+          const newFile = new File([file], newFileName, { type: file.type });
+            await uploadFiles([newFile], false);
         }).catch(async () => {
-          // Create a copy
           const newFileName = getUniqueFileName(file.name, existingFiles);
           const newFile = new File([file], newFileName, { type: file.type });
           await uploadFiles([newFile], false);
@@ -179,18 +181,11 @@ const handleFileUpload = async (files?: FileList | null) => {
   }
 };
 
-const handleChange = async (event: Event) => {
-  console.log('handleChange called');
-  const target = event.target as HTMLInputElement;
-  if (target.files) {
-    await handleFileUpload(target.files);
-  }
-};
-
-const resetFileInput = () => {
-  if (fileInputEl.value) {
-    fileInputEl.value.value = '';
-  }
+// Helper function to create a cover filename
+const getCoverFileName = (fileName: string) => {
+  const name = fileName.substring(0, fileName.lastIndexOf('.'));
+  const extension = fileName.substring(fileName.lastIndexOf('.'));
+  return `${name}-cover${extension}`;
 };
 
 const getUniqueFileName = (fileName: string, existingFiles: string[]) => {
@@ -207,6 +202,23 @@ const getUniqueFileName = (fileName: string, existingFiles: string[]) => {
   return newName;
 };
 
+
+
+const handleChange = async (event: Event) => {
+  console.log('handleChange called');
+  const target = event.target as HTMLInputElement;
+  if (target.files) {
+    await handleFileUpload(target.files);
+  }
+};
+
+const resetFileInput = () => {
+  if (fileInputEl.value) {
+    fileInputEl.value.value = '';
+  }
+};
+
+
 const uploadFiles = async (files: File[], overwrite = false) => {
   console.log('Uploading files:');
   console.log(overwrite);
@@ -216,7 +228,11 @@ const uploadFiles = async (files: File[], overwrite = false) => {
     for (const file of files) {
       formData.append('files', file);
     }
-    formData.append('roomId', roomId.value);
+    if (roomId.value !== null) {
+      formData.append('roomId', roomId.value);
+    } else {
+      formData.append('roomId', ''); // Provide a default value if roomId is null
+    }
     formData.append('overwrite', overwrite.toString());
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/drive/file');
@@ -257,6 +273,7 @@ definePageMeta({
   middleware: ['only-auth']
 });
 </script>
+
 
 
 <style scoped>

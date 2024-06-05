@@ -82,6 +82,9 @@ async function uploadFiles(files: File[], overwrite = false) {
         xhr.upload.addEventListener('progress', (ev) => {
           console.log(ev.lengthComputable, ev.loaded, ev.total);
         });
+        await fetchFileList();
+        console.log('Uploaded files:', files);
+        await _fetchFileList();
       } catch (error) {
         console.error('Failed to upload files:', error);
       } finally {
