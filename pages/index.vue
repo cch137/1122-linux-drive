@@ -122,20 +122,6 @@ const getFileExtension = (fileName: string) => {
   return fileName.split('.').pop() || '';
 };
 
-const deleteFile = async (fp: string) => {
-  isLoading.value = true;
-  try {
-    console.log('Deleting file:', fp);
-    console.log('Room ID:', roomId.value);
-    await drive.deleteFile(fp);
-    ElMessage.warning(`File [${fp}] deleted.`);
-  } catch (error) {
-    console.error('Failed to delete file:', error);
-  } finally {
-    isLoading.value = false;
-  }
-};
-
 const handleFileUpload = async (files?: FileList | null) => {
   if (!files) {
     console.log('No files selected');
@@ -158,35 +144,31 @@ const handleFileUpload = async (files?: FileList | null) => {
           }
         ).then(async () => {
           // Delete the existing file
-          await deleteFile(file.name);
+          await deleteFile(file.name, false); 
           const newFileName = getCoverFileName(file.name);
           const newFile = new File([file], newFileName, { type: file.type });
-            await uploadFiles([newFile], false);
+          await uploadFiles([newFile], true); 
         }).catch(async () => {
           const newFileName = getUniqueFileName(file.name, existingFiles);
           const newFile = new File([file], newFileName, { type: file.type });
-          await uploadFiles([newFile], false);
+          await uploadFiles([newFile], true); 
         });
       } else {
-        await uploadFiles([file], false);
+        await uploadFiles([file], true); 
       }
     }
 
     await drive.refresh();
   } catch (error) {
     console.error('Failed to upload files:', error);
+    ElMessage.error('Failed to upload files. Please try again.'); 
   } finally {
     isLoading.value = false;
     resetFileInput();
   }
 };
 
-// Helper function to create a cover filename
-const getCoverFileName = (fileName: string) => {
-  const name = fileName.substring(0, fileName.lastIndexOf('.'));
-  const extension = fileName.substring(fileName.lastIndexOf('.'));
-  return `${name}-cover${extension}`;
-};
+
 
 const getUniqueFileName = (fileName: string, existingFiles: string[]) => {
   const name = fileName.substring(0, fileName.lastIndexOf('.'));
@@ -219,9 +201,8 @@ const resetFileInput = () => {
 };
 
 
-const uploadFiles = async (files: File[], overwrite = false) => {
+const uploadFiles = async (files: File[], showMessage = true) => { 
   console.log('Uploading files:');
-  console.log(overwrite);
   isLoading.value = true;
   try {
     const formData = new FormData();
@@ -233,22 +214,54 @@ const uploadFiles = async (files: File[], overwrite = false) => {
     } else {
       formData.append('roomId', ''); // Provide a default value if roomId is null
     }
-    formData.append('overwrite', overwrite.toString());
+    formData.append('overwrite', 'false');
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/drive/file');
     xhr.send(formData);
     xhr.upload.addEventListener('progress', (ev) => {
       console.log(ev.lengthComputable, ev.loaded, ev.total);
     });
-    ElMessage.success('File uploaded successfully');
+    if (showMessage) { 
+      ElMessage.success('File uploaded successfully'); 
+    }
   } catch (error) {
     console.error('Failed to upload files:', error);
+    if (showMessage) { 
+      ElMessage.error('Failed to upload files');
+    }
+    throw error; 
   } finally {
     isLoading.value = false;
-    await drive.refresh(); // Refresh file list after upload
-    console.log('refresh');
+    await drive.refresh();
   }
 };
+
+const deleteFile = async (fp: string, showMessage = true) => { 
+  isLoading.value = true;
+  try {
+    console.log('Deleting file:', fp);
+    console.log('Room ID:', roomId.value);
+    await drive.deleteFile(fp);
+    if (showMessage) { 
+      ElMessage.warning(`File [${fp}] deleted.`); 
+    }
+  } catch (error) {
+    console.error('Failed to delete file:', error);
+    if (showMessage) { 
+      ElMessage.error('Failed to delete file');
+    }
+    throw error; 
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const getCoverFileName = (fileName: string) => {
+  const name = fileName.substring(0, fileName.lastIndexOf('.'));
+  const extension = fileName.substring(fileName.lastIndexOf('.'));
+  return `${name}-cover${extension}`;
+};
+
 
 const shareRoom = () => {
   const shareUrl = `${window.location.origin}/login?room=${roomId.value}`;

@@ -104,7 +104,6 @@ async function uploadFiles(files: File[], overwrite = false) {
 async function deleteFile(fp: string) {
   isLoading.value = true;
   try {
-/*     console.log('Deleting file with roomId:', roomId.value, 'and fp:', fp); */
     await $fetch('/api/drive/file', {
       method: 'DELETE',
       body: { fp },
