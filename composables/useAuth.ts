@@ -33,7 +33,7 @@ async function logout() {
   roomId.value = null;
 }
 
-await login();
+login();
 
 export default function () {
   const route = useRoute();
