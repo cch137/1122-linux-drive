@@ -1,8 +1,8 @@
 import { SALT } from "~/constants/app";
 import { parse as parseCookie } from "cookie";
 import drive from "~/server/services/drive";
-import { Shuttle } from "@cch137/utils/shuttle";
-import random from "@cch137/utils/random";
+import { Shuttle } from "@cch137/utils/shuttle/index.js";
+import random from "@cch137/utils/random/index.js";
 import auth from "~/server/services/auth";
 import { readMultipartFormData } from "h3";
 

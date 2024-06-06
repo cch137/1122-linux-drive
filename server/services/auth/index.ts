@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { filesDirPath } from "../constants";
-import random from "@cch137/utils/random";
+import random from "@cch137/utils/random/index.js";
 
 const auth = {
   isPin(pin: any): pin is string {
@@ -16,13 +16,13 @@ const auth = {
       const pin = random.base16(10).toUpperCase();
       if (auth.isPin(pin)) continue;
       const userDirname = path.join(filesDirPath, pin);
-      console.log(`Creating directory at: ${userDirname}`); 
+      console.log(`Creating directory at: ${userDirname}`);
       try {
         fs.mkdirSync(userDirname, { recursive: true });
-        console.log(`Successfully created directory at: ${userDirname}`); 
+        console.log(`Successfully created directory at: ${userDirname}`);
         return pin;
       } catch (error) {
-        console.error(`Error creating directory at: ${userDirname}`, error); 
+        console.error(`Error creating directory at: ${userDirname}`, error);
         throw error;
       }
     }
